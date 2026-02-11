@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Estilos globais básicos para ficar parecido com o AI Studio */
+body {
+  @apply bg-neutral-950 text-white antialiased;
+}
+
+a {
+  @apply text-blue-400 underline;
+}
+
+img {
+  @apply max-w-full h-auto;
+}
