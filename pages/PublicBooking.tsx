@@ -133,32 +133,37 @@ export const PublicBooking: React.FC = () => {
     return slots;
   }, [selectedDate, tenantSettings]);
 
-  const handleCreateAppointment = () => {
-    const existingAppointments: Appointment[] = JSON.parse(localStorage.getItem('jb_appointments_data') || JSON.stringify(MOCK_APPOINTMENTS));
-    
-    const startTimeStr = `${selectedDate}T${selectedTime}:00`;
-    const startDate = new Date(startTimeStr);
-    const endDate = new Date(startDate.getTime() + (selectedService?.duration_min || 30) * 60000);
+  const handleCreateAppointment = async () => {
+  if (!selectedServiceId || !selectedProfessionalId || !selectedTime) {
+    alert("Preencha todos os campos antes de confirmar.");
+    return;
+  }
 
-    const newAppointment: Appointment = {
-      id: Date.now(),
-      tenant_id: 1,
-      user_name: clientName,
-      user_email: clientEmail,
-      user_phone: clientPhone,
-      service_id: selectedServiceId!,
-      professional_id: selectedProfessionalId!,
+  const startTimeStr = `${selectedDate}T${selectedTime}:00`;
+  const startDate = new Date(startTimeStr);
+  const endDate = new Date(startDate.getTime() + (selectedService?.duration_min || 30) * 60000);
+
+  const { error } = await supabase.from('appointments').insert([
+    {
+      client_name: clientName,
+      client_email: clientEmail,
+      client_phone: clientPhone,
+      service_id: selectedServiceId,
+      professional_id: selectedProfessionalId,
       start_time: startDate.toISOString(),
       end_time: endDate.toISOString(),
       status: 'pendente',
-      created_at: new Date().toISOString()
-    };
+    },
+  ]);
 
-    const updatedAppointments = [newAppointment, ...existingAppointments];
-    localStorage.setItem('jb_appointments_data', JSON.stringify(updatedAppointments));
-    
+  if (error) {
+    console.error("Erro ao salvar agendamento:", error.message);
+    alert("Erro ao marcar agendamento.");
+  } else {
     setStep('success');
-  };
+  }
+};
+
 
   const handleNext = () => {
     if (step === 'service') setStep('professional');
