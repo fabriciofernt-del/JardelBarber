@@ -1,10 +1,19 @@
 import React from 'react';
+import { supabase } from './supabaseClient';
+import { useNavigate } from 'react-router-dom';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/'); // redireciona para a página pública
+  };
+
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
       <header className="border-b border-neutral-800 bg-neutral-900/80 backdrop-blur">
@@ -12,9 +21,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <span className="text-lg font-semibold tracking-tight">
             Jardel Barber
           </span>
-          <span className="text-xs text-neutral-400">
-            Painel do barbeiro premium
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-neutral-400">
+              Painel do barbeiro premium
+            </span>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 px-3 py-1 rounded text-sm hover:bg-red-700"
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 
