@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { PublicBooking } from './pages/PublicBooking';
@@ -11,21 +10,76 @@ import { Services } from './pages/Services';
 import { Revenue } from './pages/Revenue';
 import { SocialLinks } from './pages/SocialLinks';
 
+// Componente simples para proteger rotas administrativas
+const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isLoggedIn = localStorage.getItem("auth") === "true"; // mock de login
+  return isLoggedIn ? <>{children}</> : <Navigate to="/" />;
+};
+
 const App: React.FC = () => {
   return (
     <HashRouter>
       <Routes>
-        {/* Admin Dashboard Routes */}
-        <Route path="/" element={<Layout><Dashboard /></Layout>} />
-        <Route path="/appointments" element={<Layout><Appointments /></Layout>} />
-        <Route path="/professionals" element={<Layout><Professionals /></Layout>} />
-        <Route path="/services" element={<Layout><Services /></Layout>} />
-        <Route path="/revenue" element={<Layout><Revenue /></Layout>} />
-        <Route path="/social" element={<Layout><SocialLinks /></Layout>} />
-        <Route path="/settings" element={<Layout><Settings /></Layout>} />
-        
-        {/* Public Booking Route */}
-        <Route path="/booking/:slug" element={<PublicBooking />} />
+        {/* Página pública (clientes) */}
+        <Route path="/" element={<PublicBooking />} />
+
+        {/* Rotas administrativas (protegidas) */}
+        <Route
+          path="/admin"
+          element={
+            <RequireAuth>
+              <Layout><Dashboard /></Layout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/appointments"
+          element={
+            <RequireAuth>
+              <Layout><Appointments /></Layout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/professionals"
+          element={
+            <RequireAuth>
+              <Layout><Professionals /></Layout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/services"
+          element={
+            <RequireAuth>
+              <Layout><Services /></Layout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/revenue"
+          element={
+            <RequireAuth>
+              <Layout><Revenue /></Layout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/social"
+          element={
+            <RequireAuth>
+              <Layout><SocialLinks /></Layout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <RequireAuth>
+              <Layout><Settings /></Layout>
+            </RequireAuth>
+          }
+        />
       </Routes>
     </HashRouter>
   );
