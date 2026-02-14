@@ -4,35 +4,49 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Fix: Use any for session to bypass 'Session' not exported error from library
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
-    // Access auth with type assertion to bypass property existence errors
-    const auth = supabase.auth as any;
+    let mounted = true;
 
-    // Check current session
-    auth.getSession().then(({ data: { session } }: any) => {
-      setSession(session);
-      setLoading(false);
+    const checkSession = async () => {
+      try {
+        const { data: { session: currentSession } } = await (supabase.auth as any).getSession();
+        if (mounted) {
+          setSession(currentSession);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Erro ao verificar sessão:", err);
+        if (mounted) setLoading(false);
+      }
+    };
+
+    checkSession();
+
+    const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((_event: any, newSession: any) => {
+      if (mounted) {
+        setSession(newSession);
+        setLoading(false);
+      }
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = auth.onAuthStateChange((_event: any, session: any) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center gap-6">
         <div className="w-16 h-16 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin"></div>
-        <p className="text-amber-500 text-[10px] font-black uppercase tracking-[0.4em] animate-pulse">Autenticando...</p>
+        <div className="text-center">
+          <p className="text-amber-500 text-[10px] font-black uppercase tracking-[0.4em] animate-pulse">Sincronizando</p>
+          <p className="text-neutral-600 text-[8px] font-bold uppercase mt-2">Aguarde um momento...</p>
+        </div>
       </div>
     );
   }
