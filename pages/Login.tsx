@@ -29,8 +29,9 @@ export const Login: React.FC = () => {
       navigate('/admin', { replace: true });
     } catch (err: any) {
       console.error("Erro de login:", err);
-      if (err.message?.includes('fetch')) {
-        setError('O banco de dados não respondeu. Verifique se seu projeto no Supabase não está pausado.');
+      // Tratamento específico para erro de rede/conexão
+      if (err.message?.toLowerCase().includes('fetch') || err.message?.includes('network')) {
+        setError('ERRO DE CONEXÃO: O sistema não conseguiu alcançar o banco de dados.');
       } else {
         setError('E-mail ou senha incorretos. Verifique suas credenciais.');
       }
@@ -40,13 +41,13 @@ export const Login: React.FC = () => {
   };
 
   const handleDemoAccess = () => {
+    // Grava uma marca no navegador para permitir o acesso sem o Supabase
     localStorage.setItem('jb_admin_session', 'true');
     navigate('/admin', { replace: true });
   };
 
   return (
     <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-6 selection:bg-amber-500 selection:text-neutral-950">
-      {/* Background Decor */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-amber-500/10 rounded-full blur-[120px]"></div>
         <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-amber-600/5 rounded-full blur-[120px]"></div>
@@ -71,8 +72,8 @@ export const Login: React.FC = () => {
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 transition-all"
-                  placeholder="admin@jardelbarber.com"
+                  className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 transition-all text-sm"
+                  placeholder="Seu e-mail"
                   required
                 />
               </div>
@@ -86,8 +87,8 @@ export const Login: React.FC = () => {
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 transition-all"
-                  placeholder="••••••••"
+                  className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 transition-all text-sm"
+                  placeholder="Sua senha"
                   required
                 />
               </div>
@@ -99,40 +100,34 @@ export const Login: React.FC = () => {
                   <div className="flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-widest leading-relaxed">
                     <AlertCircle size={18} className="shrink-0" /> {error}
                   </div>
-                  {error.includes('banco') && (
-                    <a 
-                      href="https://supabase.com/dashboard/projects" 
-                      target="_blank" 
-                      className="text-[9px] font-black text-white underline flex items-center gap-2 hover:text-amber-500"
-                    >
-                      <ExternalLink size={12} /> VER STATUS NO SUPABASE
-                    </a>
-                  )}
                 </div>
                 
+                {/* Botão de Emergência destacado em caso de erro de rede */}
                 <button 
                   type="button"
                   onClick={handleDemoAccess}
-                  className="w-full py-5 bg-white/5 text-white border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-neutral-950 transition-all flex items-center justify-center gap-3 group"
+                  className="w-full py-5 bg-amber-500/10 text-amber-500 border border-amber-500/40 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-neutral-950 transition-all flex items-center justify-center gap-3 group shadow-[0_10px_30px_rgba(245,158,11,0.1)]"
                 >
-                  <Zap size={16} className="group-hover:fill-current" /> Pular Erro e Usar Acesso Local
+                  <Zap size={16} className="group-hover:fill-current" /> USAR ACESSO LOCAL DE EMERGÊNCIA
                 </button>
               </div>
             )}
 
-            <button 
-              type="submit"
-              disabled={loading}
-              className="w-full py-6 bg-amber-500 text-neutral-950 font-black rounded-[2rem] hover:bg-amber-400 transition-all shadow-[0_20px_40px_-10px_rgba(245,158,11,0.3)] active:scale-95 disabled:opacity-50 uppercase tracking-[0.2em] text-xs italic flex items-center justify-center gap-3"
-            >
-              {loading ? (
-                <RefreshCw className="animate-spin" size={20} />
-              ) : (
-                <>
-                  <ShieldCheck size={20} /> Entrar Agora
-                </>
-              )}
-            </button>
+            {!error && (
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full py-6 bg-amber-500 text-neutral-950 font-black rounded-[2rem] hover:bg-amber-400 transition-all shadow-[0_20px_40px_-10px_rgba(245,158,11,0.3)] active:scale-95 disabled:opacity-50 uppercase tracking-[0.2em] text-xs italic flex items-center justify-center gap-3"
+              >
+                {loading ? (
+                  <RefreshCw className="animate-spin" size={20} />
+                ) : (
+                  <>
+                    <ShieldCheck size={20} /> Entrar no Painel
+                  </>
+                )}
+              </button>
+            )}
           </form>
         </div>
 
@@ -141,7 +136,7 @@ export const Login: React.FC = () => {
             onClick={() => navigate('/')}
             className="text-neutral-600 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 mx-auto group"
           >
-            Voltar ao Início <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            Sair e voltar ao site público <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
       </div>

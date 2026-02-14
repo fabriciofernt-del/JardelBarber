@@ -1,36 +1,35 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Identificador extraído da sua chave: sb_publishable_kroq0aDUd2VxpWk7I9zxxA_aHqqfX7N
-// O ID do projeto Supabase é o bloco de 20 caracteres iniciais da chave em minúsculas
-const PROJECT_ID = 'kroq0adud2vxpwk7i9zx'; 
-const SUPABASE_URL = `https://${PROJECT_ID}.supabase.co`;
-const SUPABASE_ANON_KEY = 'sb_publishable_kroq0aDUd2VxpWk7I9zxxA_aHqqfX7N';
-
 /**
- * Tenta buscar variáveis de ambiente, mas prioriza os hardcoded caso a Vercel 
- * não esteja configurada corretamente ainda.
+ * Safely retrieves environment variables across different runtimes (Vite, Node, Browser).
+ * Prevents "Cannot read properties of undefined" errors.
  */
-const getEnv = (key: string, fallback: string): string => {
+const getEnvVar = (key: string, fallback: string): string => {
   try {
-    const v = (import.meta as any).env?.[key] || (window as any).process?.env?.[key];
-    return v && v !== 'undefined' ? v : fallback;
-  } catch (e) {
-    return fallback;
-  }
+    // 1. Try Vite's import.meta.env
+    const viteEnv = (import.meta as any).env;
+    if (viteEnv && viteEnv[key]) return viteEnv[key];
+  } catch (e) {}
+
+  try {
+    // 2. Try standard process.env (polyfilled in index.html)
+    const nodeEnv = (window as any).process?.env;
+    if (nodeEnv && nodeEnv[key]) return nodeEnv[key];
+  } catch (e) {}
+
+  // 3. Return hardcoded fallback for the specific project
+  return fallback;
 };
 
-const finalUrl = getEnv('VITE_SUPABASE_URL', SUPABASE_URL);
-const finalKey = getEnv('VITE_SUPABASE_ANON_KEY', SUPABASE_ANON_KEY);
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'https://kroq0adud2vxpwk7i9zx.supabase.co');
+const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'sb_publishable_kroq0aDUd2VxpWk7I9zxxA_aHqqfX7N');
 
-// Configuração otimizada para evitar 'Failed to Fetch'
-export const supabase = createClient(finalUrl, finalKey, {
+// Configuração resiliente para o cliente Supabase
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true
-  },
-  global: {
-    headers: { 'x-application-name': 'jardel-barber' }
   }
 });
