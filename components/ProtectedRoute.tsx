@@ -13,14 +13,23 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const checkSession = async () => {
       try {
+        // Tenta pegar a sessão real do Supabase
         const { data: { session: currentSession } } = await (supabase.auth as any).getSession();
+        
+        // Verifica se existe uma sessão de "Demo" no localStorage
+        const demoSession = localStorage.getItem('jb_admin_session');
+
         if (mounted) {
-          setSession(currentSession);
+          setSession(currentSession || (demoSession ? { user: { email: 'demo@jardelbarber.com' } } : null));
           setLoading(false);
         }
       } catch (err) {
-        console.error("Erro ao verificar sessão:", err);
-        if (mounted) setLoading(false);
+        console.warn("Erro ao verificar sessão Supabase, tentando local...");
+        const demoSession = localStorage.getItem('jb_admin_session');
+        if (mounted) {
+          setSession(demoSession ? { user: { email: 'demo@jardelbarber.com' } } : null);
+          setLoading(false);
+        }
       }
     };
 
@@ -28,7 +37,7 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((_event: any, newSession: any) => {
       if (mounted) {
-        setSession(newSession);
+        setSession(newSession || (localStorage.getItem('jb_admin_session') ? { user: { email: 'demo@jardelbarber.com' } } : null));
         setLoading(false);
       }
     });

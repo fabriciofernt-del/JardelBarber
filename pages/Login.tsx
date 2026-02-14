@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { Lock, Mail, ShieldCheck, AlertCircle, Scissors, ArrowRight } from 'lucide-react';
+import { Lock, Mail, ShieldCheck, AlertCircle, Scissors, ArrowRight, Zap } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -12,28 +12,35 @@ export const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = (location.state as any)?.from?.pathname || "/";
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      // Fix: Cast supabase.auth to any to resolve 'signInWithPassword' existence error
-      const { error } = await (supabase.auth as any).signInWithPassword({
+      // Tentativa de login real
+      const { data, error: authError } = await (supabase.auth as any).signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
       
-      navigate(from, { replace: true });
+      // Sucesso: Vai para o painel administrativo
+      navigate('/admin', { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Erro ao realizar login. Verifique suas credenciais.');
+      console.error("Erro de login:", err);
+      setError(err.message === 'Failed to fetch' 
+        ? 'Erro de Conexão: O sistema não conseguiu alcançar o banco de dados.' 
+        : 'Credenciais inválidas ou acesso negado.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDemoAccess = () => {
+    localStorage.setItem('jb_admin_session', 'true');
+    navigate('/admin', { replace: true });
   };
 
   return (
@@ -63,7 +70,7 @@ export const Login: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/5 transition-all"
-                  placeholder="admin@jardelbarber.com"
+                  placeholder="Seu e-mail de admin"
                   required
                 />
               </div>
@@ -85,7 +92,7 @@ export const Login: React.FC = () => {
             </div>
 
             {error && (
-              <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-widest animate-in slide-in-from-top-2">
+              <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-widest">
                 <AlertCircle size={18} /> {error}
               </div>
             )}
@@ -103,12 +110,21 @@ export const Login: React.FC = () => {
                 </>
               )}
             </button>
+            
+            {/* Atalho de emergência caso queira apenas visualizar o painel sem logar no Supabase agora */}
+            <button 
+              type="button"
+              onClick={handleDemoAccess}
+              className="w-full py-4 text-neutral-500 hover:text-amber-500 transition-all text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
+            >
+              <Zap size={14} /> Usar Acesso Local (Apenas Visualização)
+            </button>
           </form>
         </div>
 
         <div className="mt-12 text-center">
           <button 
-            onClick={() => navigate('/booking/jardelbarber')}
+            onClick={() => navigate('/')}
             className="text-neutral-600 hover:text-amber-500 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 mx-auto"
           >
             Voltar para Página Pública <ArrowRight size={14} />
