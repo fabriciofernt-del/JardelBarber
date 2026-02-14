@@ -1,0 +1,120 @@
+
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
+import { Lock, Mail, ShieldCheck, AlertCircle, Scissors, ArrowRight } from 'lucide-react';
+
+export const Login: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = (location.state as any)?.from?.pathname || "/";
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // Fix: Cast supabase.auth to any to resolve 'signInWithPassword' existence error
+      const { error } = await (supabase.auth as any).signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      setError(err.message || 'Erro ao realizar login. Verifique suas credenciais.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-6 selection:bg-amber-500 selection:text-neutral-950">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-amber-500/5 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-amber-600/5 rounded-full blur-[120px]"></div>
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
+        <div className="text-center mb-12">
+          <div className="bg-amber-500 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-amber-500/20 rotate-3 border-4 border-neutral-900">
+            <Scissors className="text-neutral-950" size={36} />
+          </div>
+          <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter">Scheduly Admin</h1>
+          <p className="text-amber-500/60 text-[10px] font-black uppercase tracking-[0.3em] mt-2">Acesso Restrito à Gestão Elite</p>
+        </div>
+
+        <div className="bg-neutral-900/50 backdrop-blur-xl p-10 rounded-[3rem] border border-neutral-800 shadow-2xl">
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">E-mail Profissional</label>
+              <div className="relative group">
+                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-600 group-focus-within:text-amber-500 transition-colors" size={20} />
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/5 transition-all"
+                  placeholder="admin@jardelbarber.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Chave de Acesso</label>
+              <div className="relative group">
+                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-600 group-focus-within:text-amber-500 transition-colors" size={20} />
+                <input 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/5 transition-all"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-widest animate-in slide-in-from-top-2">
+                <AlertCircle size={18} /> {error}
+              </div>
+            )}
+
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full py-6 bg-amber-500 text-neutral-950 font-black rounded-[2rem] hover:bg-amber-400 transition-all shadow-[0_20px_40px_-10px_rgba(245,158,11,0.3)] active:scale-95 disabled:opacity-50 uppercase tracking-[0.2em] text-xs italic flex items-center justify-center gap-3"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-neutral-950 border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  <ShieldCheck size={20} /> Entrar no Painel
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        <div className="mt-12 text-center">
+          <button 
+            onClick={() => navigate('/booking/jardelbarber')}
+            className="text-neutral-600 hover:text-amber-500 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 mx-auto"
+          >
+            Voltar para Página Pública <ArrowRight size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

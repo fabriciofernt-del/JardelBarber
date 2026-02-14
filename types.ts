@@ -27,6 +27,9 @@ export interface TenantSettings {
   social_instagram?: string;
   social_facebook?: string;
   whatsapp_number?: string;
+  // Payment
+  pix_copy_paste?: string;
+  pix_qr_url?: string;
 }
 
 export interface Professional {

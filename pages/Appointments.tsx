@@ -239,4 +239,3 @@ export const Appointments: React.FC = () => {
     </div>
   );
 };
-

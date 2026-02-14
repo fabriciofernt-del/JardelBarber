@@ -158,4 +158,3 @@ export const Professionals: React.FC = () => {
     </div>
   );
 };
-

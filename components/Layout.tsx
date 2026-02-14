@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   CalendarDays, 
@@ -17,6 +17,7 @@ import {
   Share2
 } from 'lucide-react';
 import { CURRENT_TENANT } from '../constants';
+import { supabase } from '../supabaseClient';
 
 const SidebarItem: React.FC<{
   to: string;
@@ -40,6 +41,14 @@ const SidebarItem: React.FC<{
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    // Fix: Cast supabase.auth to any to resolve 'signOut' existence error
+    await (supabase.auth as any).signOut();
+    localStorage.removeItem('jb_admin_session');
+    navigate('/login');
+  };
 
   return (
     <div className="flex min-h-screen bg-white font-sans selection:bg-amber-500 selection:text-neutral-950">
@@ -124,7 +133,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <span className="text-[9px] text-amber-500/60 uppercase tracking-widest font-black truncate">{CURRENT_TENANT.name}</span>
               </div>
             </div>
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-neutral-500 hover:text-rose-500 hover:bg-rose-500/5 rounded-xl transition-all font-black text-[10px] uppercase tracking-[0.2em]">
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 text-neutral-500 hover:text-rose-500 hover:bg-rose-500/5 rounded-xl transition-all font-black text-[10px] uppercase tracking-[0.2em]"
+            >
               <LogOut size={16} />
               <span>Sair do Painel</span>
             </button>

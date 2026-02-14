@@ -14,17 +14,17 @@ import {
   DollarSign, 
   Calendar, 
   TrendingUp, 
-  BrainCircuit, 
+  BarChart3, 
   RefreshCcw,
   Zap,
   ArrowRight,
   MoreVertical,
   Clock,
   CheckCircle2,
-  Scissors
+  Scissors,
+  Lightbulb
 } from 'lucide-react';
 import { MOCK_APPOINTMENTS, SERVICES, PROFESSIONALS, CURRENT_TENANT } from '../constants';
-import { getBusinessInsights } from '../services/geminiService';
 
 const StatCard: React.FC<{
   title: string;
@@ -48,7 +48,6 @@ const StatCard: React.FC<{
 );
 
 export const Dashboard: React.FC = () => {
-  const [insights, setInsights] = useState<any[]>([]);
   const [loadingInsights, setLoadingInsights] = useState(false);
 
   const stats = useMemo(() => {
@@ -64,6 +63,27 @@ export const Dashboard: React.FC = () => {
     return { totalAppts, totalRevenue, uniqueClients, occupancyRate };
   }, []);
 
+  // Inteligência de Negócio Local (Substitui a IA)
+  const localInsights = useMemo(() => {
+    return [
+      {
+        title: "Otimização de Ticket Médio",
+        description: `Com base nos seus ${stats.totalAppts} agendamentos, oferecer o combo 'Corte + Barba' pode elevar seu faturamento mensal em até 25%.`,
+        action: "Ver Combos"
+      },
+      {
+        title: "Retenção de Clientes",
+        description: "Seus clientes mais ativos costumam voltar a cada 15 dias. Implementar um lembrete automático via WhatsApp pode garantir agenda cheia.",
+        action: "Configurar Lembrete"
+      },
+      {
+        title: "Upsell de Produtos",
+        description: "80% dos serviços de corte master terminam sem venda de produto. Oferecer pomadas modeladoras no checkout é sua maior oportunidade hoje.",
+        action: "Gerenciar Estoque"
+      }
+    ];
+  }, [stats]);
+
   const chartData = useMemo(() => {
     const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
     const dailyData = days.map(name => ({ name, appts: 0, revenue: 0 }));
@@ -77,23 +97,13 @@ export const Dashboard: React.FC = () => {
     return [...dailyData.slice(1), dailyData[0]];
   }, []);
 
-  const fetchInsights = async () => {
+  const refreshDashboard = () => {
     setLoadingInsights(true);
-    try {
-      const result = await getBusinessInsights(MOCK_APPOINTMENTS, SERVICES, PROFESSIONALS);
-      setInsights(result.insights || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingInsights(false);
-    }
+    setTimeout(() => setLoadingInsights(false), 800);
   };
-
-  useEffect(() => { fetchInsights(); }, []);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Agendamentos" 
@@ -127,7 +137,6 @@ export const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          {/* Revenue Chart with Gold theme */}
           <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
             <div className="flex justify-between items-center mb-10">
               <div>
@@ -153,7 +162,6 @@ export const Dashboard: React.FC = () => {
                     dataKey="name" 
                     axisLine={false} 
                     tickLine={false} 
-                    /* Removed textTransform as it is not a valid SVG text property and causes TS errors */
                     tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 800}} 
                     dy={10}
                   />
@@ -182,7 +190,6 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Recent Appointments with Gold accents */}
           <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
             <div className="flex justify-between items-center mb-10">
               <h3 className="text-xl font-black text-neutral-950 uppercase italic tracking-tighter">Próximos Estilos</h3>
@@ -194,7 +201,7 @@ export const Dashboard: React.FC = () => {
                 return (
                   <div key={appt.id} className="flex items-center justify-between p-6 rounded-[2rem] border border-slate-50 hover:bg-slate-50/80 hover:border-amber-500/20 transition-all group cursor-default">
                     <div className="flex items-center gap-5">
-                      <div className="w-14 h-14 rounded-2xl bg-neutral-950 flex items-center justify-center text-amber-500 font-black text-lg italic shadow-lg shadow-neutral-950/10 group-hover:scale-105 transition-transform">
+                      <div className="w-14 h-14 rounded-2xl bg-neutral-950 flex items-center justify-center text-amber-500 font-black text-lg italic shadow-lg shadow-neutral-950/10 group-hover:rotate-6 transition-transform">
                         {appt.user_name.charAt(0)}
                       </div>
                       <div>
@@ -233,7 +240,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* AI Insights with Black and Gold premium theme */}
         <div className="bg-neutral-950 text-white p-10 rounded-[3rem] border border-neutral-900 shadow-2xl relative overflow-hidden flex flex-col h-full ring-4 ring-amber-500/5">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500 rounded-full blur-[120px] opacity-10"></div>
           <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-amber-600 rounded-full blur-[120px] opacity-10"></div>
@@ -241,15 +247,15 @@ export const Dashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-12 relative z-10">
             <div className="flex items-center gap-4">
               <div className="bg-amber-500/10 p-3 rounded-2xl border border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
-                <BrainCircuit className="text-amber-500" size={28} />
+                <Lightbulb className="text-amber-500" size={28} />
               </div>
               <div>
-                <h3 className="text-xl font-black tracking-tight uppercase italic italic tracking-tighter text-white">Scheduly AI</h3>
-                <p className="text-[9px] text-amber-500/70 font-black uppercase tracking-[0.3em] mt-0.5">Analista Virtual</p>
+                <h3 className="text-xl font-black tracking-tight uppercase italic tracking-tighter text-white">Business Intel</h3>
+                <p className="text-[9px] text-amber-500/70 font-black uppercase tracking-[0.3em] mt-0.5">Gestão Estratégica</p>
               </div>
             </div>
             <button 
-              onClick={fetchInsights}
+              onClick={refreshDashboard}
               disabled={loadingInsights}
               className="p-3 bg-neutral-900 rounded-2xl hover:bg-neutral-800 transition-all disabled:opacity-50 border border-neutral-800 text-amber-500 hover:text-amber-400 active:scale-90"
             >
@@ -270,8 +276,8 @@ export const Dashboard: React.FC = () => {
                   </div>
                 ))}
               </div>
-            ) : insights.length > 0 ? (
-              insights.map((insight, idx) => (
+            ) : (
+              localInsights.map((insight, idx) => (
                 <div key={idx} className="group cursor-default">
                   <div className="flex items-start gap-5 p-6 rounded-[2rem] bg-neutral-900/50 hover:bg-neutral-900 transition-all border border-neutral-800/50 hover:border-amber-500/30 group">
                     <div className="mt-1">
@@ -287,13 +293,6 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
               ))
-            ) : (
-              <div className="text-center py-20 flex flex-col items-center gap-6">
-                <div className="w-20 h-20 bg-neutral-900 rounded-[2rem] flex items-center justify-center border border-neutral-800 shadow-inner">
-                  <Zap className="text-neutral-700" size={40} />
-                </div>
-                <p className="text-neutral-500 text-[10px] font-black uppercase tracking-widest max-w-[180px] leading-relaxed">Pressione recarregar para gerar novas métricas estratégicas.</p>
-              </div>
             )}
           </div>
           
@@ -320,4 +319,3 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
-

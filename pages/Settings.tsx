@@ -9,7 +9,10 @@ import {
   AlertCircle, 
   Scissors, 
   Upload, 
-  Image as LucideImage 
+  Image as LucideImage,
+  Smartphone,
+  Copy,
+  QrCode
 } from 'lucide-react';
 import { CURRENT_TENANT, SETTINGS } from '../constants';
 
@@ -23,12 +26,15 @@ export const Settings: React.FC = () => {
   const [address, setAddress] = useState(SETTINGS.location_address);
   const [city, setCity] = useState(SETTINGS.location_city);
   const [state, setState] = useState(SETTINGS.location_state);
+  const [pixCopyPaste, setPixCopyPaste] = useState(SETTINGS.pix_copy_paste || '');
+  const [pixQrUrl, setPixQrUrl] = useState(SETTINGS.pix_qr_url || '');
   
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   
   const logoInputRef = useRef<HTMLInputElement>(null);
   const headerInputRef = useRef<HTMLInputElement>(null);
+  const pixQrInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     setIsSaving(true);
@@ -47,10 +53,12 @@ export const Settings: React.FC = () => {
       location_state: state,
       social_instagram: instagram,
       social_facebook: facebook,
-      whatsapp_number: whatsapp
+      whatsapp_number: whatsapp,
+      pix_copy_paste: pixCopyPaste,
+      pix_qr_url: pixQrUrl
     };
 
-    // Simulate API call and persist to localStorage
+    // Simulando persistência e atualização do estado global via localStorage
     setTimeout(() => {
       localStorage.setItem('jb_tenant_data', JSON.stringify(updatedTenant));
       localStorage.setItem('jb_settings_data', JSON.stringify(updatedSettings));
@@ -58,22 +66,22 @@ export const Settings: React.FC = () => {
       setIsSaving(false);
       setSaveSuccess(true);
       
-      // Reset success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
       
-      // Force reload to update Layout and other components
+      // Forçar recarga para atualizar o Layout e outros componentes que usam as constantes
       window.location.reload();
     }, 1000);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'header') => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'header' | 'pixqr') => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = reader.result as string;
         if (type === 'logo') setLogoUrl(base64);
-        else setHeaderBgUrl(base64);
+        else if (type === 'header') setHeaderBgUrl(base64);
+        else if (type === 'pixqr') setPixQrUrl(base64);
       };
       reader.readAsDataURL(file);
     }
@@ -160,24 +168,17 @@ export const Settings: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">URL ou Código da Logo</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">URL da Logo</label>
                   <div className="relative">
                     <ImageIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                     <input 
                       type="text" 
                       value={logoUrl}
                       onChange={(e) => setLogoUrl(e.target.value)}
-                      placeholder="Cole um link ou use o botão de upload acima"
+                      placeholder="URL da imagem (upload acima também funciona)"
                       className="w-full pl-14 pr-5 py-5 rounded-2xl border-2 border-slate-100 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/5 outline-none transition-all font-bold text-xs" 
                     />
                   </div>
-                </div>
-                {/* Visual indicator for upload preference */}
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-                   <div className="bg-white p-2 rounded-xl shadow-sm text-amber-500">
-                      <Upload size={16} />
-                   </div>
-                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Toque nas fotos acima para upar direto do celular</p>
                 </div>
               </div>
             </div>
@@ -229,11 +230,75 @@ export const Settings: React.FC = () => {
             </div>
           </div>
 
+          {/* Payment Settings Section */}
+          <div className="pt-12 border-t border-slate-100 space-y-8">
+            <div className="flex items-center gap-4">
+              <div className="bg-amber-500 text-neutral-950 p-3 rounded-2xl shadow-lg shadow-amber-500/20">
+                <Smartphone size={24} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-neutral-950 uppercase italic tracking-tighter">Pagamentos PIX</h3>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Configure o recebimento instantâneo</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Código PIX Copia e Cola</label>
+                  <div className="relative group">
+                    <Copy className="absolute left-5 top-5 text-slate-300 group-focus-within:text-amber-500" size={20} />
+                    <textarea 
+                      value={pixCopyPaste}
+                      onChange={(e) => setPixCopyPaste(e.target.value)}
+                      placeholder="Cole aqui o código do seu PIX Copia e Cola"
+                      className="w-full pl-14 pr-5 py-5 rounded-2xl border-2 border-slate-100 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/5 outline-none transition-all font-mono text-[10px] bg-slate-50/50 min-h-[120px]" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">QR Code do PIX (Imagem)</label>
+                  <div className="flex items-start gap-4">
+                    <div 
+                      onClick={() => pixQrInputRef.current?.click()}
+                      className="w-32 h-32 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 hover:border-amber-500 transition-all cursor-pointer bg-slate-50 relative overflow-hidden group"
+                    >
+                      {pixQrUrl ? (
+                        <img src={pixQrUrl} className="w-full h-full object-contain" alt="PIX QR" />
+                      ) : (
+                        <QrCode size={24} />
+                      )}
+                      <div className="absolute inset-0 bg-neutral-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                         <Upload size={16} className="text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                       <input 
+                         type="text" 
+                         value={pixQrUrl}
+                         onChange={(e) => setPixQrUrl(e.target.value)}
+                         placeholder="URL da imagem do QR Code"
+                         className="w-full p-4 rounded-xl border border-slate-200 text-xs font-bold"
+                       />
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
+                         <AlertCircle size={10} className="inline mr-1" /> Upe a imagem do seu QR Code gerado no banco para que o cliente escaneie diretamente.
+                       </p>
+                    </div>
+                    <input type="file" ref={pixQrInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'pixqr')} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="pt-12 border-t border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
               {saveSuccess && (
-                <div className="flex items-center gap-2 text-emerald-500 font-black uppercase text-[11px] tracking-widest animate-in fade-in slide-in-from-left-4">
-                  <CheckCircle2 size={20} /> Perfil Jardel Barber Atualizado!
+                <div className="flex items-center gap-2 text-emerald-500 font-black uppercase text-[10px] tracking-widest animate-in fade-in slide-in-from-left-4">
+                  <CheckCircle2 size={16} /> Ajustes Salvos com Sucesso!
                 </div>
               )}
             </div>
@@ -247,24 +312,11 @@ export const Settings: React.FC = () => {
               ) : (
                 <Save size={20} />
               )}
-              {isSaving ? 'SALVANDO MARCA...' : 'SALVAR PERFIL JARDEL BARBER'}
+              {isSaving ? 'SINCROIZANDO...' : 'SALVAR ALTERAÇÕES'}
             </button>
           </div>
-        </div>
-      </div>
-      
-      <div className="bg-amber-500/5 p-8 rounded-[2.5rem] border border-amber-500/10 flex items-start gap-6">
-        <div className="bg-amber-500 text-neutral-950 p-3 rounded-2xl shadow-lg shadow-amber-900/10">
-           <AlertCircle size={24} />
-        </div>
-        <div>
-           <p className="text-xs font-black text-amber-600 uppercase tracking-widest mb-2">Aviso de Sincronização</p>
-           <p className="text-sm text-slate-500 font-medium leading-relaxed">
-             Suas alterações serão refletidas instantaneamente na <b>Página Pública</b> e no seu <b>Painel Administrativo</b> assim que você clicar em salvar. Use fotos em alta definição para um resultado premium.
-           </p>
         </div>
       </div>
     </div>
   );
 };
-

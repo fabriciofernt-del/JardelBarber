@@ -190,4 +190,3 @@ export const SocialLinks: React.FC = () => {
     </div>
   );
 };
-

@@ -27,9 +27,11 @@ const defaultSettings: TenantSettings = {
   location_address: 'Rua Costa Barros, 2231',
   location_city: 'Fortaleza',
   location_state: 'CE',
-  social_instagram: 'https://instagram.com/jardelbarber',
-  social_facebook: 'https://facebook.com/jardelbarber',
-  whatsapp_number: '5585999999999'
+  social_instagram: 'https://www.instagram.com/jardeldss_barber?igsh=MTdoYnhvODNjZ215YQ==',
+  social_facebook: '',
+  whatsapp_number: '558599451711',
+  pix_copy_paste: '00020101021126790014BR.GOV.BCB.PIX2557pix-qr.mercadopago.com/instore/ol/v2/rZJ2IlRqoiDJtzwyhEt15204000053039865802BR5915Jardel Barbeiro6009SAO PAULO62080504mpis6304460A',
+  pix_qr_url: '' // Will be populated by user in Settings
 };
 
 export const SETTINGS: TenantSettings = savedSettings ? JSON.parse(savedSettings) : defaultSettings;
@@ -41,7 +43,7 @@ const defaultProfessionals: Professional[] = [
 ];
 export const PROFESSIONALS: Professional[] = savedProfessionals ? JSON.parse(savedProfessionals) : defaultProfessionals;
 
-// Persistence for Services
+// Persistence for Services com Imagens Fixas e Premium
 const savedServices = localStorage.getItem('jb_services_data');
 const defaultServices: Service[] = [
   { 
@@ -51,7 +53,7 @@ const defaultServices: Service[] = [
     duration_min: 30, 
     price: 30.00, 
     active: true,
-    image_url: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=400&h=300&auto=format&fit=crop'
+    image_url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=600&auto=format&fit=crop'
   },
   { 
     id: 2, 
@@ -60,7 +62,7 @@ const defaultServices: Service[] = [
     duration_min: 20, 
     price: 30.00, 
     active: true,
-    image_url: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=400&h=300&auto=format&fit=crop'
+    image_url: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=600&auto=format&fit=crop'
   },
   { 
     id: 3, 
@@ -69,7 +71,8 @@ const defaultServices: Service[] = [
     duration_min: 50, 
     price: 50.00, 
     active: true,
-    image_url: 'https://images.unsplash.com/photo-1599351431247-f10b21817021?q=80&w=400&h=300&auto=format&fit=crop'
+    // Imagem focada no combo de elite
+    image_url: 'https://images.unsplash.com/photo-1599351431247-f10b21817021?q=80&w=600&auto=format&fit=crop'
   }
 ];
 export const SERVICES: Service[] = savedServices ? JSON.parse(savedServices) : defaultServices;
@@ -82,7 +85,7 @@ const defaultAppointments: Appointment[] = [
     tenant_id: 1,
     user_name: 'Exemplo Sistema',
     user_email: 'admin@jardelbarber.com',
-    user_phone: '(85) 99999-9999',
+    user_phone: '558599451711',
     service_id: 1,
     professional_id: 1,
     start_time: new Date().toISOString(),
