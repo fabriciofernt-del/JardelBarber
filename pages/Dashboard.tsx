@@ -28,7 +28,8 @@ const StatCard: React.FC<{
   trend: string;
   icon: React.ElementType;
   colorClass: string;
-}> = ({ title, value, trend, icon: Icon, colorClass }) => (
+  valueColorClass?: string;
+}> = ({ title, value, trend, icon: Icon, colorClass, valueColorClass = "text-neutral-950" }) => (
   <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300">
     <div className="flex justify-between items-start mb-4">
       <div className={`p-3 rounded-xl ${colorClass}`}>
@@ -39,7 +40,7 @@ const StatCard: React.FC<{
       </span>
     </div>
     <h3 className="text-slate-400 text-[8px] font-black uppercase tracking-[0.2em] mb-1">{title}</h3>
-    <p className="text-2xl font-black text-neutral-950 tracking-tighter italic uppercase">{value}</p>
+    <p className={`text-2xl font-black tracking-tighter italic uppercase ${valueColorClass}`}>{value}</p>
   </div>
 );
 
@@ -77,7 +78,7 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-700 pb-10">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <StatCard title="Agenda" value={stats.totalAppts.toString()} trend="+12%" icon={Calendar} colorClass="bg-neutral-950 text-amber-500" />
+        <StatCard title="Agenda" value={stats.totalAppts.toString()} trend="+12%" icon={Calendar} colorClass="bg-neutral-950 text-amber-500" valueColorClass="text-amber-600" />
         <StatCard title="Faturamento" value={`R$ ${stats.totalRevenue}`} trend="+8%" icon={DollarSign} colorClass="bg-amber-500 text-neutral-950" />
         <StatCard title="Clientes" value={stats.uniqueClients.toString()} trend="+24%" icon={Users} colorClass="bg-neutral-900 text-amber-400" />
         <StatCard title="Ocupação" value={`${stats.occupancyRate}%`} trend="+5%" icon={TrendingUp} colorClass="bg-amber-100 text-amber-600" />
@@ -124,7 +125,7 @@ export const Dashboard: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-black text-neutral-950">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black text-amber-600">
                     <Clock size={12} className="text-amber-500" />
                     {new Date(appt.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </div>

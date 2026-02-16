@@ -14,7 +14,6 @@ export const Login: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Verificação simples antes de tentar o fetch
     if (!email || !password) {
       setError('Por favor, preencha todos os campos.');
       return;
@@ -23,9 +22,19 @@ export const Login: React.FC = () => {
     setLoading(true);
     setError('');
 
+    // CREDENCIAIS FIXAS DE ACESSO MASTER
+    const ADMIN_EMAIL = 'jardeldss99@gmail.com';
+    const ADMIN_PASS = 'Cb82241034@';
+
     try {
-      console.log("Tentando login para:", email);
-      
+      // 1. Verifica se são as credenciais mestres primeiro
+      if (email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASS) {
+        localStorage.setItem('jb_admin_session', 'true');
+        navigate('/admin', { replace: true });
+        return;
+      }
+
+      // 2. Se não for a mestre, tenta o Supabase (fallback)
       const { data, error: authError } = await (supabase.auth as any).signInWithPassword({
         email: email.trim(),
         password: password,
@@ -33,17 +42,15 @@ export const Login: React.FC = () => {
 
       if (authError) throw authError;
       
-      console.log("Login bem sucedido!");
       localStorage.removeItem('jb_admin_session');
       navigate('/admin', { replace: true });
     } catch (err: any) {
-      console.error("Erro detalhado de login:", err);
+      console.error("Erro de login:", err);
       
-      // Tratamento amigável para o erro de fetch
       if (err.message?.toLowerCase().includes('fetch') || err.message?.includes('network')) {
-        setError('Erro de conexão: O banco de dados não respondeu. Tente o Acesso de Emergência.');
+        setError('Erro de conexão. Use suas credenciais mestres para entrar.');
       } else {
-        setError(err.message || 'E-mail ou senha incorretos.');
+        setError('E-mail ou senha incorretos.');
       }
     } finally {
       setLoading(false);
@@ -63,6 +70,7 @@ export const Login: React.FC = () => {
             <Scissors className="text-neutral-950" size={36} />
           </div>
           <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter">Painel Admin</h1>
+          <p className="text-[10px] text-amber-500/60 font-black uppercase tracking-[0.3em] mt-2">Acesso Restrito Scheduly</p>
         </div>
 
         <div className="bg-neutral-900/50 backdrop-blur-2xl p-10 rounded-[3rem] border border-neutral-800 shadow-2xl">
@@ -76,7 +84,7 @@ export const Login: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 transition-all"
-                  placeholder="exemplo@email.com"
+                  placeholder="admin@email.com"
                   autoComplete="email"
                   required
                 />
@@ -100,7 +108,7 @@ export const Login: React.FC = () => {
             </div>
 
             {error && (
-              <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl text-rose-500 text-[10px] font-bold uppercase flex items-center gap-3">
+              <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl text-rose-500 text-[10px] font-bold uppercase flex items-center gap-3 animate-pulse">
                 <AlertCircle size={18} /> {error}
               </div>
             )}
@@ -108,28 +116,15 @@ export const Login: React.FC = () => {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full py-6 bg-amber-500 text-neutral-950 font-black rounded-2xl hover:bg-amber-400 transition-all flex items-center justify-center gap-3 uppercase tracking-widest italic disabled:opacity-50"
+              className="w-full py-6 bg-amber-500 text-neutral-950 font-black rounded-2xl hover:bg-amber-400 transition-all flex items-center justify-center gap-3 uppercase tracking-widest italic disabled:opacity-50 shadow-lg shadow-amber-500/10"
             >
               {loading ? <RefreshCw className="animate-spin" /> : <ShieldCheck size={20} />}
-              Entrar no Painel
-            </button>
-            
-            <div className="relative py-4">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-neutral-800"></div></div>
-              <div className="relative flex justify-center text-[8px] font-bold uppercase tracking-widest"><span className="bg-neutral-900 px-4 text-neutral-600">Ou use</span></div>
-            </div>
-
-            <button 
-              type="button"
-              onClick={handleDemoAccess}
-              className="w-full py-4 border border-amber-500/30 text-amber-500 font-bold rounded-2xl hover:bg-amber-500/10 transition-all flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest"
-            >
-              <Zap size={16} /> Acesso de Emergência
+              Autenticar Acesso
             </button>
           </form>
         </div>
         
-        <button onClick={() => navigate('/')} className="mt-8 w-full text-neutral-600 hover:text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+        <button onClick={() => navigate('/')} className="mt-8 w-full text-neutral-600 hover:text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
           Voltar para o site <ArrowRight size={14} />
         </button>
       </div>
