@@ -50,7 +50,6 @@ export const Dashboard: React.FC = () => {
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [chartReady, setChartReady] = useState(false);
 
-  // Delay para garantir que o container do gráfico tenha largura antes de renderizar (evita tela preta/erro de SVG)
   useEffect(() => {
     const timer = setTimeout(() => setChartReady(true), 300);
     return () => clearTimeout(timer);
@@ -112,23 +111,23 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Agenda" value={stats.totalAppts.toString()} trend="+12%" icon={Calendar} colorClass="bg-neutral-950 text-amber-500 shadow-lg shadow-amber-500/10" />
         <StatCard title="Faturamento" value={`R$ ${stats.totalRevenue.toLocaleString('pt-BR')}`} trend="+8%" icon={DollarSign} colorClass="bg-amber-500 text-neutral-950 shadow-lg shadow-amber-500/20" />
         <StatCard title="Clientes" value={stats.uniqueClients.toString()} trend="+24%" icon={Users} colorClass="bg-neutral-900 text-amber-400 shadow-lg shadow-neutral-950/10" />
         <StatCard title="Ocupação" value={`${stats.occupancyRate}%`} trend="+5%" icon={TrendingUp} colorClass="bg-amber-100 text-amber-600" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-10">
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm min-h-[450px]">
-            <div className="flex justify-between items-center mb-10">
+          <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-sm min-h-[350px] md:min-h-[450px]">
+            <div className="flex justify-between items-center mb-8 md:mb-10">
               <div>
-                <h3 className="text-xl font-black text-neutral-950 uppercase italic tracking-tighter">Fluxo Financeiro</h3>
-                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Ganhos da {CURRENT_TENANT?.name}</p>
+                <h3 className="text-lg md:text-xl font-black text-neutral-950 uppercase italic tracking-tighter">Fluxo Financeiro</h3>
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Ganhos da {CURRENT_TENANT?.name}</p>
               </div>
             </div>
-            <div className="h-[350px] w-full">
+            <div className="h-[250px] md:h-[350px] w-full">
               {chartReady && (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData}>
@@ -151,25 +150,25 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
-            <h3 className="text-xl font-black text-neutral-950 uppercase italic tracking-tighter mb-10">Próximos Clientes</h3>
+          <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+            <h3 className="text-xl font-black text-neutral-950 uppercase italic tracking-tighter mb-8 md:mb-10">Próximos Clientes</h3>
             <div className="space-y-4">
               {(MOCK_APPOINTMENTS || []).slice(0, 5).map((appt) => (
-                <div key={appt.id} className="flex items-center justify-between p-6 rounded-[2rem] border border-slate-50 hover:bg-slate-50 transition-all group">
-                  <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 rounded-2xl bg-neutral-950 flex items-center justify-center text-amber-500 font-black text-lg italic shadow-lg shadow-neutral-950/10">
+                <div key={appt.id} className="flex items-center justify-between p-4 md:p-6 rounded-[2rem] border border-slate-50 hover:bg-slate-50 transition-all group">
+                  <div className="flex items-center gap-3 md:gap-5">
+                    <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-neutral-950 flex items-center justify-center text-amber-500 font-black text-base md:text-lg italic shadow-lg shadow-neutral-950/10">
                       {appt.user_name.charAt(0)}
                     </div>
                     <div>
-                      <h4 className="font-black text-neutral-950 text-base tracking-tight italic uppercase">{appt.user_name}</h4>
-                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
+                      <h4 className="font-black text-neutral-950 text-sm md:text-base tracking-tight italic uppercase">{appt.user_name}</h4>
+                      <p className="text-[8px] md:text-[10px] text-slate-500 font-black uppercase tracking-widest truncate max-w-[120px]">
                         {SERVICES.find(s => s.id === appt.service_id)?.name || 'Serviço'}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="flex items-center justify-end gap-2 text-sm font-black text-neutral-950">
-                      <Clock size={14} className="text-amber-500" />
+                    <div className="flex items-center justify-end gap-1.5 md:gap-2 text-xs md:text-sm font-black text-neutral-950">
+                      <Clock size={12} className="text-amber-500" />
                       {new Date(appt.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
@@ -179,13 +178,13 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-neutral-950 text-white p-10 rounded-[3rem] border border-neutral-900 shadow-2xl flex flex-col h-full ring-4 ring-amber-500/5">
-          <div className="flex items-center gap-4 mb-12">
+        <div className="bg-neutral-950 text-white p-8 md:p-10 rounded-[3rem] border border-neutral-900 shadow-2xl flex flex-col h-full ring-4 ring-amber-500/5">
+          <div className="flex items-center gap-4 mb-8 md:mb-12">
             <div className="bg-amber-500/10 p-3 rounded-2xl border border-amber-500/30">
               <Lightbulb className="text-amber-500" size={28} />
             </div>
             <div>
-              <h3 className="text-xl font-black uppercase italic tracking-tighter text-white">Estratégia</h3>
+              <h3 className="text-lg md:text-xl font-black uppercase italic tracking-tighter text-white">Estratégia</h3>
               <p className="text-[9px] text-amber-500/70 font-black uppercase tracking-[0.3em]">Gestão de Negócio</p>
             </div>
           </div>
@@ -203,7 +202,7 @@ export const Dashboard: React.FC = () => {
             ))}
           </div>
           
-          <div className="mt-12 pt-8 border-t border-neutral-900">
+          <div className="mt-10 md:mt-12 pt-8 border-t border-neutral-900">
             <div className="bg-amber-500/5 p-6 rounded-[2.5rem] border border-amber-500/10 mb-8">
               <div className="flex justify-between mb-2">
                 <span className="text-[10px] text-neutral-500 font-black uppercase">Ocupação Agenda</span>

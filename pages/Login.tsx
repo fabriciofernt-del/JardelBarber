@@ -13,27 +13,37 @@ export const Login: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Verificação simples antes de tentar o fetch
+    if (!email || !password) {
+      setError('Por favor, preencha todos os campos.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      // Tentativa de login real
+      console.log("Tentando login para:", email);
+      
       const { data, error: authError } = await (supabase.auth as any).signInWithPassword({
-        email,
-        password,
+        email: email.trim(),
+        password: password,
       });
 
       if (authError) throw authError;
       
+      console.log("Login bem sucedido!");
       localStorage.removeItem('jb_admin_session');
       navigate('/admin', { replace: true });
     } catch (err: any) {
-      console.error("Erro de login:", err);
-      // Se falhar a conexão, avisamos o usuário
+      console.error("Erro detalhado de login:", err);
+      
+      // Tratamento amigável para o erro de fetch
       if (err.message?.toLowerCase().includes('fetch') || err.message?.includes('network')) {
-        setError('O sistema não conseguiu conectar ao banco de dados. Use o acesso de emergência abaixo.');
+        setError('Erro de conexão: O banco de dados não respondeu. Tente o Acesso de Emergência.');
       } else {
-        setError('E-mail ou senha incorretos.');
+        setError(err.message || 'E-mail ou senha incorretos.');
       }
     } finally {
       setLoading(false);
@@ -67,6 +77,7 @@ export const Login: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 transition-all"
                   placeholder="exemplo@email.com"
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -82,6 +93,7 @@ export const Login: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 transition-all"
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   required
                 />
               </div>
@@ -96,7 +108,7 @@ export const Login: React.FC = () => {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full py-6 bg-amber-500 text-neutral-950 font-black rounded-2xl hover:bg-amber-400 transition-all flex items-center justify-center gap-3 uppercase tracking-widest italic"
+              className="w-full py-6 bg-amber-500 text-neutral-950 font-black rounded-2xl hover:bg-amber-400 transition-all flex items-center justify-center gap-3 uppercase tracking-widest italic disabled:opacity-50"
             >
               {loading ? <RefreshCw className="animate-spin" /> : <ShieldCheck size={20} />}
               Entrar no Painel

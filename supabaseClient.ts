@@ -1,30 +1,16 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+// URL Real do projeto extraída da sua chave de API
+const SUPABASE_URL = 'https://kroq0adud2vxpwk7i9zx.supabase.co';
+// Chave anon que você forneceu
+const SUPABASE_ANON_KEY = 'sb_publishable_kroq0aDUd2VxpWk7I9zxxA_aHqqfX7N';
+
 /**
- * A URL 'jardelbarber.supabase.co' não existe. 
- * O ID real do seu projeto é 'kroq0adud2vxpwk7i9zx'.
- * Este código substitui qualquer URL errada pela correta.
+ * Cliente Supabase com configuração de resiliência.
+ * O uso de hardcoding aqui previne que variáveis de ambiente incorretas na Vercel quebrem o app.
  */
-const getEnvVar = (key: string, fallback: string): string => {
-  let value = fallback;
-  try {
-    const viteEnv = (import.meta as any).env;
-    if (viteEnv && viteEnv[key]) value = viteEnv[key];
-  } catch (e) {}
-
-  // Correção forçada para o erro ERR_NAME_NOT_RESOLVED
-  if (key === 'VITE_SUPABASE_URL') {
-    return 'https://kroq0adud2vxpwk7i9zx.supabase.co';
-  }
-
-  return value;
-};
-
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL', 'https://kroq0adud2vxpwk7i9zx.supabase.co');
-const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY', 'sb_publishable_kroq0aDUd2VxpWk7I9zxxA_aHqqfX7N');
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script>
-      // Polyfill para compatibilidade
+      // Polyfill essencial para o Supabase e outras libs funcionarem no navegador
       window.process = { env: {} };
       window.global = window;
     </script>
@@ -33,9 +33,9 @@
     "recharts": "https://esm.sh/recharts@2.15.0?external=react,react-dom",
     "lucide-react": "https://esm.sh/lucide-react@0.469.0?external=react",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",
-    "path": "https://esm.sh/path@^0.12.7",
+    "vite": "https://esm.sh/vite@^7.3.1",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
-    "vite": "https://esm.sh/vite@^7.3.1"
+    "path": "https://esm.sh/path@^0.12.7"
   }
 }
 </script>
