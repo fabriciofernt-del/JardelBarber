@@ -1,28 +1,23 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Briefcase, 
   Plus, 
   Search, 
   Trash2, 
   Edit3, 
   Clock, 
-  DollarSign, 
-  CheckCircle2, 
-  XCircle,
   Scissors,
-  Save,
   X,
   Camera,
   Image as ImageIcon,
   Upload,
-  AlertCircle
+  DollarSign
 } from 'lucide-react';
-import { SERVICES } from '../constants';
+import { getServices, createService, updateService, deleteService } from '../constants';
 import { Service } from '../types';
 
 export const Services: React.FC = () => {
-  const [servicesList, setServicesList] = useState<Service[]>(SERVICES);
+  const [servicesList, setServicesList] = useState<Service[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -31,13 +26,20 @@ export const Services: React.FC = () => {
   const [duration, setDuration] = useState('30');
   const [price, setPrice] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [loading, setLoading] = useState(true);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync with localStorage
+  const loadServices = async () => {
+    setLoading(true);
+    const data = await getServices();
+    setServicesList(data);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    localStorage.setItem('jb_services_data', JSON.stringify(servicesList));
-  }, [servicesList]);
+    loadServices();
+  }, []);
 
   const filteredServices = servicesList.filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -71,32 +73,44 @@ export const Services: React.FC = () => {
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !price) return;
+    
     if (editingService) {
-      setServicesList(servicesList.map(s => 
-        s.id === editingService.id ? { ...s, name, duration_min: parseInt(duration), price: parseFloat(price), image_url: imageUrl } : s
-      ));
+      const { error } = await updateService(editingService.id, {
+        name,
+        duration_min: parseInt(duration),
+        price: parseFloat(price),
+        image_url: imageUrl
+      });
+      if (!error) loadServices();
     } else {
-      const newService: Service = {
-        id: servicesList.length > 0 ? Math.max(...servicesList.map(s => s.id)) + 1 : 1,
-        tenant_id: 1, name, duration_min: parseInt(duration), price: parseFloat(price), active: true, image_url: imageUrl
-      };
-      setServicesList([...servicesList, newService]);
+      const { error } = await createService({
+        name,
+        duration_min: parseInt(duration),
+        price: parseFloat(price),
+        active: true,
+        image_url: imageUrl
+      });
+      if (!error) loadServices();
     }
     setShowModal(false);
   };
 
-  const toggleStatus = (id: number) => {
-    setServicesList(servicesList.map(s => s.id === id ? { ...s, active: !s.active } : s));
+  const toggleStatus = async (id: number, currentStatus: boolean) => {
+    await updateService(id, { active: !currentStatus });
+    loadServices();
   };
 
-  const removeService = (id: number) => {
+  const removeService = async (id: number) => {
     if (confirm('Deseja realmente remover este serviço?')) {
-      setServicesList(servicesList.filter(s => s.id !== id));
+      await deleteService(id);
+      loadServices();
     }
   };
+
+  if (loading) return <div className="p-10 text-center text-slate-400">Carregando catálogo...</div>;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
@@ -181,7 +195,7 @@ export const Services: React.FC = () => {
 
               <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
                 <button 
-                  onClick={() => toggleStatus(service.id)}
+                  onClick={() => toggleStatus(service.id, service.active)}
                   className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all px-4 py-2 rounded-xl ${
                     service.active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'
                   }`}

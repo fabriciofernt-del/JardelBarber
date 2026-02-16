@@ -1,12 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  CalendarDays, 
+  Clock, 
   Users, 
   Settings, 
-  Clock, 
   ChevronRight,
   LogOut,
   Sparkles,
@@ -18,7 +17,8 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { CURRENT_TENANT } from '../constants';
+import { getTenant, DEFAULT_TENANT } from '../constants';
+import { Tenant } from '../types';
 import { supabase } from '../supabaseClient';
 
 const SidebarItem: React.FC<{
@@ -47,6 +47,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [tenant, setTenant] = useState<Tenant>(DEFAULT_TENANT);
+
+  useEffect(() => {
+    getTenant().then(setTenant);
+  }, []);
 
   const handleLogout = async () => {
     await (supabase.auth as any).signOut();
@@ -101,7 +106,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
         <div className="mt-auto p-6 space-y-4">
           <Link 
-            to={`/booking/${CURRENT_TENANT.slug}`} 
+            to={`/booking/${tenant.slug}`} 
             className="flex items-center justify-center gap-2 px-4 py-4 bg-amber-500/5 text-amber-500 rounded-2xl border border-amber-500/20 shadow-lg"
           >
             <Sparkles size={18} />
@@ -110,11 +115,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <div className="pt-6 border-t border-neutral-900">
             <div className="flex items-center gap-3 px-2 mb-6 text-left">
               <div className="w-10 h-10 rounded-xl border-2 border-neutral-800 overflow-hidden bg-neutral-900 shrink-0">
-                {CURRENT_TENANT.logo_url && <img src={CURRENT_TENANT.logo_url} alt="Logo" className="w-full h-full object-cover" />}
+                {tenant.logo_url && <img src={tenant.logo_url} alt="Logo" className="w-full h-full object-cover" />}
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-black text-white truncate italic uppercase tracking-tighter">Admin Master</span>
-                <span className="text-[8px] text-amber-500/60 uppercase tracking-widest font-black truncate">{CURRENT_TENANT.name}</span>
+                <span className="text-[8px] text-amber-500/60 uppercase tracking-widest font-black truncate">{tenant.name}</span>
               </div>
             </div>
             <button 
@@ -150,7 +155,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <header className="hidden lg:flex justify-between items-center mb-10">
             <div className="flex items-center gap-6">
               <div className="w-16 h-16 rounded-2xl bg-neutral-950 p-1 shadow-xl border-2 border-white overflow-hidden flex items-center justify-center">
-                {CURRENT_TENANT.logo_url ? <img src={CURRENT_TENANT.logo_url} className="w-full h-full object-contain" /> : <User className="text-amber-500" />}
+                {tenant.logo_url ? <img src={tenant.logo_url} className="w-full h-full object-contain" /> : <User className="text-amber-500" />}
               </div>
               <div>
                 <h2 className="text-2xl font-black text-neutral-950 tracking-tighter uppercase italic leading-none">

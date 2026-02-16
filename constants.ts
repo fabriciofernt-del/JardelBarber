@@ -1,24 +1,22 @@
 
+import { supabase } from './supabaseClient';
 import { Tenant, TenantSettings, Professional, Service, Appointment, RevenueEntry } from './types';
 
-// Initializing from localStorage if available, otherwise using defaults
-const savedTenant = localStorage.getItem('jb_tenant_data');
-const defaultTenant: Tenant = {
+export const TENANT_ID = 1;
+
+// --- INITIAL STATE PLACEHOLDERS (For UI initialization before fetch) ---
+
+export const DEFAULT_TENANT: Tenant = {
   id: 1,
-  name: 'JARDEL BARBER',
-  slug: 'jardelbarber',
+  name: 'Carregando...',
+  slug: 'loading',
   status: 'ativo',
   created_at: new Date().toISOString(),
-  // URL da Logo Metálica / Perfil Principal da Barbearia
-  logo_url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=600&h=600&auto=format&fit=crop',
-  // URL do Background do Header
-  header_bg_url: 'https://images.unsplash.com/photo-1599351431247-f10b21817021?q=80&w=1200&auto=format&fit=crop'
+  logo_url: '',
+  header_bg_url: ''
 };
 
-export const CURRENT_TENANT: Tenant = savedTenant ? JSON.parse(savedTenant) : defaultTenant;
-
-const savedSettings = localStorage.getItem('jb_settings_data');
-const defaultSettings: TenantSettings = {
+export const DEFAULT_SETTINGS: TenantSettings = {
   id: 1,
   tenant_id: 1,
   work_start: '09:00',
@@ -26,77 +24,167 @@ const defaultSettings: TenantSettings = {
   slot_step_min: 30,
   buffer_min: 15,
   timezone: 'America/Sao_Paulo',
-  location_address: 'Rua Costa Barros, 2231',
-  location_city: 'Fortaleza',
-  location_state: 'CE',
-  social_instagram: 'https://www.instagram.com/jardeldss_barber?igsh=MTdoYnhvODNjZ215YQ==',
+  location_address: '',
+  location_city: '',
+  location_state: '',
+  social_instagram: '',
   social_facebook: '',
-  whatsapp_number: '558599451711',
-  pix_copy_paste: '00020101021126790014BR.GOV.BCB.PIX2557pix-qr.mercadopago.com/instore/ol/v2/rZJ2IlRqoiDJtzwyhEt15204000053039865802BR5915Jardel Barbeiro6009SAO PAULO62080504mpis6304460A',
-  pix_qr_url: '' 
+  whatsapp_number: '',
+  pix_copy_paste: '',
+  pix_qr_url: ''
 };
 
-export const SETTINGS: TenantSettings = savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+// --- API FUNCTIONS ---
 
-const savedProfessionals = localStorage.getItem('jb_professionals_data');
-const defaultProfessionals: Professional[] = [
-  { id: 1, tenant_id: 1, name: 'JARDEL BARBER', specialty: 'Master Barber', active: true }
-];
-export const PROFESSIONALS: Professional[] = savedProfessionals ? JSON.parse(savedProfessionals) : defaultProfessionals;
+export const getTenant = async (): Promise<Tenant> => {
+  const { data, error } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('id', TENANT_ID)
+    .single();
+  
+  if (error) console.error('Error fetching tenant:', error);
+  return data || DEFAULT_TENANT;
+};
 
-const savedServices = localStorage.getItem('jb_services_data');
-const defaultServices: Service[] = [
-  { 
-    id: 1, 
-    tenant_id: 1, 
-    name: 'Corte de cabelo', 
-    duration_min: 30, 
-    price: 30.00, 
-    active: true,
-    image_url: 'https://images.unsplash.com/photo-1605497788044-5a32c7078486?q=80&w=800&auto=format&fit=crop'
-  },
-  { 
-    id: 2, 
-    tenant_id: 1, 
-    name: 'Barba na Navalha', 
-    duration_min: 20, 
-    price: 30.00, 
-    active: true,
-    image_url: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=800&auto=format&fit=crop'
-  },
-  { 
-    id: 3, 
-    tenant_id: 1, 
-    name: 'Corte & Barba', 
-    duration_min: 50, 
-    price: 50.00, 
-    active: true,
-    image_url: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=800&auto=format&fit=crop'
+export const updateTenant = async (updates: Partial<Tenant>) => {
+  const { error } = await supabase.from('tenants').update(updates).eq('id', TENANT_ID);
+  return { error };
+};
+
+export const getSettings = async (): Promise<TenantSettings> => {
+  const { data, error } = await supabase
+    .from('tenant_settings')
+    .select('*')
+    .eq('tenant_id', TENANT_ID)
+    .single();
+
+  if (error) {
+    console.warn('Settings not found, returning defaults');
+    return DEFAULT_SETTINGS;
   }
-];
-export const SERVICES: Service[] = savedServices ? JSON.parse(savedServices) : defaultServices;
+  return data;
+};
 
-const savedAppointments = localStorage.getItem('jb_appointments_data');
-const defaultAppointments: Appointment[] = [
-  {
-    id: 1,
-    tenant_id: 1,
-    user_name: 'Exemplo Sistema',
-    user_email: 'admin@jardelbarber.com',
-    user_phone: '558599451711',
-    service_id: 1,
-    professional_id: 1,
-    start_time: new Date().toISOString(),
-    end_time: new Date(Date.now() + 1800000).toISOString(),
-    status: 'confirmado',
-    created_at: new Date().toISOString()
+export const updateSettings = async (updates: Partial<TenantSettings>) => {
+  // Check if settings exist first
+  const { data } = await supabase.from('tenant_settings').select('id').eq('tenant_id', TENANT_ID).single();
+  
+  if (data) {
+    const { error } = await supabase.from('tenant_settings').update(updates).eq('tenant_id', TENANT_ID);
+    return { error };
+  } else {
+    const { error } = await supabase.from('tenant_settings').insert([{ ...updates, tenant_id: TENANT_ID }]);
+    return { error };
   }
-];
-export const MOCK_APPOINTMENTS: Appointment[] = savedAppointments ? JSON.parse(savedAppointments) : defaultAppointments;
+};
 
-export const MOCK_REVENUE: RevenueEntry[] = [
-  { id: 1, date: new Date().toISOString(), description: 'Corte de Cabelo - Cliente Carlos', category: 'servico', amount: 30.00, payment_method: 'dinheiro' },
-  { id: 2, date: new Date().toISOString(), description: 'Pomada Modeladora Silver', category: 'produto', amount: 45.00, payment_method: 'pix' },
-  { id: 3, date: new Date(Date.now() - 86400000).toISOString(), description: 'Combo Corte e Barba - Ricardo', category: 'servico', amount: 50.00, payment_method: 'cartao' },
-  { id: 4, date: new Date(Date.now() - 172800000).toISOString(), description: 'Venda Óleo para Barba', category: 'produto', amount: 35.00, payment_method: 'dinheiro' }
-];
+export const getServices = async (): Promise<Service[]> => {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .eq('tenant_id', TENANT_ID)
+    .order('name');
+  
+  if (error) console.error('Error fetching services:', error);
+  return data || [];
+};
+
+export const createService = async (service: Partial<Service>) => {
+  const { error } = await supabase.from('services').insert([{ ...service, tenant_id: TENANT_ID }]);
+  return { error };
+};
+
+export const updateService = async (id: number, updates: Partial<Service>) => {
+  const { error } = await supabase.from('services').update(updates).eq('id', id);
+  return { error };
+};
+
+export const deleteService = async (id: number) => {
+  const { error } = await supabase.from('services').delete().eq('id', id);
+  return { error };
+};
+
+export const getProfessionals = async (): Promise<Professional[]> => {
+  const { data, error } = await supabase
+    .from('professionals')
+    .select('*')
+    .eq('tenant_id', TENANT_ID)
+    .order('name');
+
+  if (error) console.error('Error fetching professionals:', error);
+  return data || [];
+};
+
+export const createProfessional = async (pro: Partial<Professional>) => {
+  const { error } = await supabase.from('professionals').insert([{ ...pro, tenant_id: TENANT_ID }]);
+  return { error };
+};
+
+export const updateProfessional = async (id: number, updates: Partial<Professional>) => {
+  const { error } = await supabase.from('professionals').update(updates).eq('id', id);
+  return { error };
+};
+
+export const deleteProfessional = async (id: number) => {
+  const { error } = await supabase.from('professionals').delete().eq('id', id);
+  return { error };
+};
+
+export const getAppointments = async (): Promise<Appointment[]> => {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('*')
+    .eq('tenant_id', TENANT_ID)
+    .order('start_time', { ascending: false });
+
+  if (error) console.error('Error fetching appointments:', error);
+  return data || [];
+};
+
+export const createAppointment = async (appt: Partial<Appointment>) => {
+  const { error } = await supabase.from('appointments').insert([{ ...appt, tenant_id: TENANT_ID }]);
+  return { error };
+};
+
+export const updateAppointment = async (id: number, updates: Partial<Appointment>) => {
+  const { error } = await supabase.from('appointments').update(updates).eq('id', id);
+  return { error };
+};
+
+export const deleteAppointment = async (id: number) => {
+  const { error } = await supabase.from('appointments').delete().eq('id', id);
+  return { error };
+};
+
+// Revenue (Optional - assumes table 'revenue' exists)
+export const getRevenue = async (): Promise<RevenueEntry[]> => {
+  const { data, error } = await supabase
+    .from('revenue')
+    .select('*')
+    .order('date', { ascending: false });
+    
+  if (error) {
+    console.warn('Revenue table might not exist or error fetching:', error);
+    return [];
+  }
+  return data || [];
+};
+
+export const createRevenue = async (entry: Partial<RevenueEntry>) => {
+  const { error } = await supabase.from('revenue').insert([entry]);
+  return { error };
+};
+
+export const deleteRevenue = async (id: number) => {
+  const { error } = await supabase.from('revenue').delete().eq('id', id);
+  return { error };
+};
+
+// Backwards compatibility exports (empty arrays/objects to prevent immediate crashes before refactor)
+export const CURRENT_TENANT = DEFAULT_TENANT; 
+export const SETTINGS = DEFAULT_SETTINGS;
+export const SERVICES: Service[] = [];
+export const PROFESSIONALS: Professional[] = [];
+export const MOCK_APPOINTMENTS: Appointment[] = [];
+export const MOCK_REVENUE: RevenueEntry[] = [];

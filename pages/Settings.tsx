@@ -6,71 +6,94 @@ import {
   MapPin, 
   ImageIcon, 
   CheckCircle2, 
-  AlertCircle, 
   Scissors, 
   Upload, 
   Image as LucideImage,
   Smartphone,
   Copy,
-  QrCode
+  QrCode,
+  AlertCircle
 } from 'lucide-react';
-import { CURRENT_TENANT, SETTINGS } from '../constants';
+import { getTenant, getSettings, updateTenant, updateSettings, DEFAULT_TENANT, DEFAULT_SETTINGS } from '../constants';
 
 export const Settings: React.FC = () => {
-  const [tenantName, setTenantName] = useState(CURRENT_TENANT.name);
-  const [logoUrl, setLogoUrl] = useState(CURRENT_TENANT.logo_url || '');
-  const [headerBgUrl, setHeaderBgUrl] = useState(CURRENT_TENANT.header_bg_url || '');
-  const [instagram, setInstagram] = useState(SETTINGS.social_instagram || '');
-  const [facebook, setFacebook] = useState(SETTINGS.social_facebook || '');
-  const [whatsapp, setWhatsapp] = useState(SETTINGS.whatsapp_number || '');
-  const [address, setAddress] = useState(SETTINGS.location_address);
-  const [city, setCity] = useState(SETTINGS.location_city);
-  const [state, setState] = useState(SETTINGS.location_state);
-  const [pixCopyPaste, setPixCopyPaste] = useState(SETTINGS.pix_copy_paste || '');
-  const [pixQrUrl, setPixQrUrl] = useState(SETTINGS.pix_qr_url || '');
+  const [tenantName, setTenantName] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [headerBgUrl, setHeaderBgUrl] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [facebook, setFacebook] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [pixCopyPaste, setPixCopyPaste] = useState('');
+  const [pixQrUrl, setPixQrUrl] = useState('');
   
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   const logoInputRef = useRef<HTMLInputElement>(null);
   const headerInputRef = useRef<HTMLInputElement>(null);
   const pixQrInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSave = () => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [t, s] = await Promise.all([getTenant(), getSettings()]);
+        setTenantName(t.name);
+        setLogoUrl(t.logo_url || '');
+        setHeaderBgUrl(t.header_bg_url || '');
+        
+        setAddress(s.location_address || '');
+        setCity(s.location_city || '');
+        setState(s.location_state || '');
+        setInstagram(s.social_instagram || '');
+        setFacebook(s.social_facebook || '');
+        setWhatsapp(s.whatsapp_number || '');
+        setPixCopyPaste(s.pix_copy_paste || '');
+        setPixQrUrl(s.pix_qr_url || '');
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleSave = async () => {
     setIsSaving(true);
     
-    const updatedTenant = {
-      ...CURRENT_TENANT,
-      name: tenantName,
-      logo_url: logoUrl,
-      header_bg_url: headerBgUrl
-    };
+    try {
+      await updateTenant({
+        name: tenantName,
+        logo_url: logoUrl,
+        header_bg_url: headerBgUrl
+      });
 
-    const updatedSettings = {
-      ...SETTINGS,
-      location_address: address,
-      location_city: city,
-      location_state: state,
-      social_instagram: instagram,
-      social_facebook: facebook,
-      whatsapp_number: whatsapp,
-      pix_copy_paste: pixCopyPaste,
-      pix_qr_url: pixQrUrl
-    };
+      await updateSettings({
+        location_address: address,
+        location_city: city,
+        location_state: state,
+        social_instagram: instagram,
+        social_facebook: facebook,
+        whatsapp_number: whatsapp,
+        pix_copy_paste: pixCopyPaste,
+        pix_qr_url: pixQrUrl
+      });
 
-    // Simulando persistência e atualização do estado global via localStorage
-    setTimeout(() => {
-      localStorage.setItem('jb_tenant_data', JSON.stringify(updatedTenant));
-      localStorage.setItem('jb_settings_data', JSON.stringify(updatedSettings));
-      
-      setIsSaving(false);
       setSaveSuccess(true);
-      
       setTimeout(() => setSaveSuccess(false), 3000);
       
-      // Forçar recarga para atualizar o Layout e outros componentes que usam as constantes
-      window.location.reload();
-    }, 1000);
+      // Force reload to update Layout context if needed, or we could use Context API
+      // window.location.reload(); 
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao salvar');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'header' | 'pixqr') => {
@@ -86,6 +109,8 @@ export const Settings: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
+
+  if (loading) return <div className="p-10 text-center text-slate-400">Carregando configurações...</div>;
 
   return (
     <div className="max-w-4xl space-y-8 animate-in fade-in duration-500 pb-12">

@@ -14,7 +14,15 @@ import {
   CalendarDays,
   Lock
 } from 'lucide-react';
-import { CURRENT_TENANT, SETTINGS, SERVICES, PROFESSIONALS } from '../constants';
+import { 
+  getTenant, 
+  getSettings, 
+  getServices, 
+  getProfessionals, 
+  createAppointment,
+  DEFAULT_TENANT,
+  DEFAULT_SETTINGS
+} from '../constants';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tenant, TenantSettings, Service, Professional } from '../types';
 import { supabase } from '../supabaseClient';
@@ -25,11 +33,11 @@ export const PublicBooking: React.FC = () => {
   const navigate = useNavigate();
   const { slug } = useParams();
   
-  const [tenant] = useState<Tenant>(CURRENT_TENANT);
-  const [tenantSettings] = useState<TenantSettings>(SETTINGS);
+  const [tenant, setTenant] = useState<Tenant>(DEFAULT_TENANT);
+  const [tenantSettings, setTenantSettings] = useState<TenantSettings>(DEFAULT_SETTINGS);
   
-  const [availableServices, setAvailableServices] = useState<Service[]>(SERVICES);
-  const [availableProfessionals, setAvailableProfessionals] = useState<Professional[]>(PROFESSIONALS);
+  const [availableServices, setAvailableServices] = useState<Service[]>([]);
+  const [availableProfessionals, setAvailableProfessionals] = useState<Professional[]>([]);
 
   const [step, setStep] = useState<BookingStep>('service');
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
@@ -47,17 +55,22 @@ export const PublicBooking: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const servicesPromise = supabase.from('services').select('*').eq('active', true);
-        const professionalsPromise = supabase.from('professionals').select('*').eq('active', true);
-        const [sRes, pRes] = await Promise.all([servicesPromise, professionalsPromise]);
+        const [t, s, servs, pros] = await Promise.all([
+          getTenant(),
+          getSettings(),
+          getServices(),
+          getProfessionals()
+        ]);
         
-        if (sRes.data && sRes.data.length > 0) setAvailableServices(sRes.data);
-        if (pRes.data && pRes.data.length > 0) setAvailableProfessionals(pRes.data);
+        setTenant(t);
+        setTenantSettings(s);
+        setAvailableServices(servs);
+        setAvailableProfessionals(pros);
 
         const { data: { session } } = await (supabase.auth as any).getSession();
         setIsAdmin(!!session || !!localStorage.getItem('jb_admin_session'));
       } catch (err) {
-        setIsAdmin(!!localStorage.getItem('jb_admin_session'));
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -65,8 +78,12 @@ export const PublicBooking: React.FC = () => {
     fetchData();
   }, []);
 
+  const selectedService = useMemo(() => availableServices.find(s => s.id === selectedServiceId), [availableServices, selectedServiceId]);
+
   const availableSlots = useMemo(() => {
     const slots: string[] = [];
+    if (!tenantSettings.work_start) return slots;
+
     const [startHour, startMin] = tenantSettings.work_start.split(':').map(Number);
     const [endHour, endMin] = tenantSettings.work_end.split(':').map(Number);
     const stepMin = tenantSettings.slot_step_min;
@@ -84,36 +101,48 @@ export const PublicBooking: React.FC = () => {
       const hours = current.getHours().toString().padStart(2, '0');
       const minutes = current.getMinutes().toString().padStart(2, '0');
       const timeString = `${hours}:${minutes}`;
-      if (!isToday || current > now) slots.push(timeString);
+      
+      // Basic check: if today, don't show past times
+      if (!isToday || current > now) {
+        slots.push(timeString);
+      }
+      
       current.setMinutes(current.getMinutes() + stepMin);
     }
     return slots;
   }, [selectedDate, tenantSettings]);
 
   const handleCreateAppointment = async () => {
+    if (!selectedService || !selectedTime) return;
+
     setSubmitting(true);
+    
+    // Calculate End Time
+    const startDateTime = new Date(`${selectedDate}T${selectedTime}:00`);
+    const endDateTime = new Date(startDateTime.getTime() + selectedService.duration_min * 60000);
+
     const appointmentData = {
-      tenant_id: 1,
       user_name: clientName,
       user_phone: clientPhone,
-      service_id: selectedServiceId,
-      professional_id: selectedProfessionalId,
-      start_time: `${selectedDate}T${selectedTime}:00Z`,
+      service_id: selectedServiceId!,
+      professional_id: selectedProfessionalId!,
+      start_time: startDateTime.toISOString(),
+      end_time: endDateTime.toISOString(),
       status: 'pendente' as const,
-      created_at: new Date().toISOString()
     };
 
     try {
-      await supabase.from('appointments').insert([appointmentData]);
-      const saved = localStorage.getItem('jb_appointments_data');
-      const appointments = saved ? JSON.parse(saved) : [];
-      localStorage.setItem('jb_appointments_data', JSON.stringify([{ ...appointmentData, id: Date.now() }, ...appointments]));
-      setStep('success');
+      const { error } = await createAppointment(appointmentData);
+      
+      if (error) {
+        alert('Erro ao agendar. Tente novamente.');
+        console.error(error);
+      } else {
+        setStep('success');
+      }
     } catch (error) {
-      const saved = localStorage.getItem('jb_appointments_data');
-      const appointments = saved ? JSON.parse(saved) : [];
-      localStorage.setItem('jb_appointments_data', JSON.stringify([{ ...appointmentData, id: Date.now() }, ...appointments]));
-      setStep('success');
+      console.error(error);
+      alert('Erro inesperado.');
     } finally {
       setSubmitting(false);
     }
@@ -134,7 +163,7 @@ export const PublicBooking: React.FC = () => {
       <div className="relative w-full h-[45vh] min-h-[400px] flex flex-col items-center justify-center overflow-hidden">
          {/* Background com Overlay */}
          <div className="absolute inset-0">
-           <img src={tenant.header_bg_url} className="w-full h-full object-cover opacity-40 blur-sm scale-110" alt="Banner" />
+           <img src={tenant.header_bg_url || 'https://images.unsplash.com/photo-1599351431247-f10b21817021'} className="w-full h-full object-cover opacity-40 blur-sm scale-110" alt="Banner" />
            <div className="absolute inset-0 bg-gradient-to-b from-neutral-950/30 via-neutral-950/50 to-neutral-950"></div>
          </div>
          
@@ -145,7 +174,7 @@ export const PublicBooking: React.FC = () => {
              <div className="absolute -inset-0.5 bg-gradient-to-br from-amber-300 to-amber-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
              <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full p-1.5 bg-neutral-950">
                 <img 
-                  src={tenant.logo_url} 
+                  src={tenant.logo_url || 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1'} 
                   alt={tenant.name} 
                   className="w-full h-full object-cover rounded-full border-2 border-neutral-800"
                 />
@@ -195,6 +224,10 @@ export const PublicBooking: React.FC = () => {
                    <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">Escolha o seu Estilo</h2>
                 </div>
                 
+                {availableServices.length === 0 && (
+                   <p className="text-neutral-500 italic">Nenhum serviço disponível no momento.</p>
+                )}
+
                 {availableServices.map(s => (
                   <button 
                     key={s.id} 
@@ -202,7 +235,7 @@ export const PublicBooking: React.FC = () => {
                     className="w-full group relative overflow-hidden bg-neutral-900/60 backdrop-blur-xl rounded-[2rem] border border-neutral-800 hover:border-amber-500/50 transition-all duration-300 p-4 flex items-center gap-5 text-left hover:bg-neutral-800/80 active:scale-[0.98]"
                   >
                     <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 border border-neutral-700 group-hover:border-amber-500/30 transition-colors shadow-2xl relative">
-                       {s.image_url && <img src={s.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />}
+                       {s.image_url ? <img src={s.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full bg-neutral-800" />}
                        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/60 to-transparent"></div>
                     </div>
                     

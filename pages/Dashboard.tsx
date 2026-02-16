@@ -16,11 +16,11 @@ import {
   TrendingUp, 
   RefreshCcw,
   Zap,
-  ArrowRight,
   Clock,
   Lightbulb
 } from 'lucide-react';
-import { MOCK_APPOINTMENTS, SERVICES, PROFESSIONALS, CURRENT_TENANT } from '../constants';
+import { getAppointments, getServices, getProfessionals } from '../constants';
+import { Appointment, Service, Professional } from '../types';
 
 const StatCard: React.FC<{
   title: string;
@@ -45,49 +45,81 @@ const StatCard: React.FC<{
 );
 
 export const Dashboard: React.FC = () => {
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [loading, setLoading] = useState(true);
   const [chartReady, setChartReady] = useState(false);
 
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [appts, servs, pros] = await Promise.all([
+        getAppointments(),
+        getServices(),
+        getProfessionals()
+      ]);
+      setAppointments(appts);
+      setServices(servs);
+      setProfessionals(pros);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
+    loadData();
     const timer = setTimeout(() => setChartReady(true), 300);
     return () => clearTimeout(timer);
   }, []);
 
   const stats = useMemo(() => {
-    const totalAppts = MOCK_APPOINTMENTS?.length || 0;
-    const totalRevenue = (MOCK_APPOINTMENTS || []).reduce((sum, appt) => {
-      const service = SERVICES.find(s => s.id === appt.service_id);
+    const totalAppts = appointments.length;
+    const totalRevenue = appointments.reduce((sum, appt) => {
+      // Only count confirmed or completed, or maybe all for projection? 
+      // Let's count all non-cancelled for now as "projected/actual"
+      if (appt.status === 'cancelado') return sum;
+      const service = services.find(s => s.id === appt.service_id);
       return sum + (service?.price || 0);
     }, 0);
-    const uniqueClients = new Set((MOCK_APPOINTMENTS || []).map(a => a.user_name)).size;
-    const maxCapacity = (PROFESSIONALS?.length || 1) * 10 * 7; 
-    const occupancyRate = Math.min(Math.round((totalAppts / (maxCapacity || 1)) * 100), 100);
+    const uniqueClients = new Set(appointments.map(a => a.user_name)).size;
+    const maxCapacity = (professionals.length || 1) * 10 * 7; 
+    const occupancyRate = maxCapacity > 0 ? Math.min(Math.round((totalAppts / maxCapacity) * 100), 100) : 0;
     return { totalAppts, totalRevenue, uniqueClients, occupancyRate };
-  }, []);
+  }, [appointments, services, professionals]);
 
   const chartData = useMemo(() => {
     const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
     const dailyData = days.map(name => ({ name, revenue: 0 }));
-    (MOCK_APPOINTMENTS || []).forEach(appt => {
+    
+    appointments.forEach(appt => {
+      if (appt.status === 'cancelado') return;
       const date = new Date(appt.start_time);
-      const service = SERVICES.find(s => s.id === appt.service_id);
-      if (dailyData[date.getDay()]) dailyData[date.getDay()].revenue += (service?.price || 0);
+      const service = services.find(s => s.id === appt.service_id);
+      if (dailyData[date.getDay()]) {
+        dailyData[date.getDay()].revenue += (service?.price || 0);
+      }
     });
-    return [...dailyData.slice(1), dailyData[0]];
-  }, []);
+    // Rotate to start from Monday or simply show Sun-Sat. Let's keep Sun-Sat for simplicity or rotate based on today?
+    // User mock data was shifted. Let's just return Sun-Sat.
+    return dailyData;
+  }, [appointments, services]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-700 pb-10">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <StatCard title="Agenda" value={stats.totalAppts.toString()} trend="+12%" icon={Calendar} colorClass="bg-neutral-950 text-amber-500" valueColorClass="text-amber-600" />
-        <StatCard title="Faturamento" value={`R$ ${stats.totalRevenue}`} trend="+8%" icon={DollarSign} colorClass="bg-amber-500 text-neutral-950" />
-        <StatCard title="Clientes" value={stats.uniqueClients.toString()} trend="+24%" icon={Users} colorClass="bg-neutral-900 text-amber-400" />
-        <StatCard title="Ocupação" value={`${stats.occupancyRate}%`} trend="+5%" icon={TrendingUp} colorClass="bg-amber-100 text-amber-600" />
+        <StatCard title="Agenda" value={stats.totalAppts.toString()} trend="Ativo" icon={Calendar} colorClass="bg-neutral-950 text-amber-500" valueColorClass="text-amber-600" />
+        <StatCard title="Faturamento Est." value={`R$ ${stats.totalRevenue.toFixed(0)}`} trend="Total" icon={DollarSign} colorClass="bg-amber-500 text-neutral-950" />
+        <StatCard title="Clientes Únicos" value={stats.uniqueClients.toString()} trend="Base" icon={Users} colorClass="bg-neutral-900 text-amber-400" />
+        <StatCard title="Ocupação" value={`${stats.occupancyRate}%`} trend="Fluxo" icon={TrendingUp} colorClass="bg-amber-100 text-amber-600" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-            <h3 className="text-sm font-black text-neutral-950 uppercase italic tracking-tighter mb-6">Fluxo Financeiro</h3>
+            <h3 className="text-sm font-black text-neutral-950 uppercase italic tracking-tighter mb-6">Fluxo Financeiro Semanal</h3>
             <div className="h-[200px] md:h-[300px] w-full">
               {chartReady && (
                 <ResponsiveContainer width="100%" height="100%">
@@ -112,7 +144,7 @@ export const Dashboard: React.FC = () => {
           <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
             <h3 className="text-sm font-black text-neutral-950 uppercase italic tracking-tighter mb-6">Próximos Clientes</h3>
             <div className="space-y-3">
-              {(MOCK_APPOINTMENTS || []).slice(0, 3).map((appt) => (
+              {appointments.slice(0, 3).map((appt) => (
                 <div key={appt.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 bg-slate-50/30">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-neutral-950 flex items-center justify-center text-amber-500 font-black italic shadow-sm">
@@ -121,7 +153,7 @@ export const Dashboard: React.FC = () => {
                     <div>
                       <h4 className="font-black text-neutral-950 text-xs tracking-tight italic uppercase">{appt.user_name}</h4>
                       <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">
-                        {SERVICES.find(s => s.id === appt.service_id)?.name || 'Serviço'}
+                        {services.find(s => s.id === appt.service_id)?.name || 'Serviço'}
                       </p>
                     </div>
                   </div>
@@ -131,6 +163,9 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
               ))}
+              {appointments.length === 0 && (
+                <p className="text-center text-xs text-slate-400 py-4">Sem agendamentos recentes.</p>
+              )}
             </div>
           </div>
         </div>
@@ -144,10 +179,12 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="p-5 rounded-2xl bg-neutral-900/50 border border-neutral-800">
             <Zap size={16} className="text-amber-500 mb-2" />
-            <h4 className="font-black text-[10px] mb-1 text-white uppercase italic tracking-wide">Ticket Médio</h4>
-            <p className="text-neutral-400 text-[10px] leading-relaxed">O combo 'Corte + Barba' é sua maior chance de lucro hoje.</p>
+            <h4 className="font-black text-[10px] mb-1 text-white uppercase italic tracking-wide">Performance</h4>
+            <p className="text-neutral-400 text-[10px] leading-relaxed">
+              Você tem {appointments.length} agendamentos registrados. Mantenha sua agenda atualizada para obter métricas precisas.
+            </p>
           </div>
-          <button onClick={() => window.location.reload()} className="w-full bg-amber-500 text-neutral-950 font-black py-4 rounded-xl transition-all shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2 uppercase text-[10px] italic">
+          <button onClick={loadData} className="w-full bg-amber-500 text-neutral-950 font-black py-4 rounded-xl transition-all shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2 uppercase text-[10px] italic hover:bg-amber-400">
             <RefreshCcw size={14} /> Atualizar Painel
           </button>
         </div>

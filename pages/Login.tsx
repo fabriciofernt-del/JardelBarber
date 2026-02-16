@@ -22,40 +22,27 @@ export const Login: React.FC = () => {
     setLoading(true);
     setError('');
 
-    // CREDENCIAIS FIXAS DE ACESSO MASTER
-    const ADMIN_EMAIL = 'jardeldss99@gmail.com';
-    const ADMIN_PASS = 'Cb82241034@';
-
     try {
-      // 1. Verifica se são as credenciais mestres primeiro
-      if (email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASS) {
-        localStorage.setItem('jb_admin_session', 'true');
-        navigate('/admin', { replace: true });
-        return;
-      }
-
-      // 2. Se não for a mestre, tenta o Supabase (fallback para outros usuários se houver)
-      const { error: authError } = await (supabase.auth as any).signInWithPassword({
+      // Authenticate with Supabase
+      const { data, error: authError } = await (supabase.auth as any).signInWithPassword({
         email: email.trim(),
         password: password,
       });
 
       if (authError) {
-        throw new Error('invalid_credentials');
+        throw authError;
       }
       
-      localStorage.removeItem('jb_admin_session');
+      // Store a marker that we are logged in, although Supabase client handles persistence
+      localStorage.setItem('jb_admin_session', 'true');
       navigate('/admin', { replace: true });
     } catch (err: any) {
       console.error("Erro de login:", err);
       
-      // Mensagem personalizada conforme solicitado pelo usuário
-      if (err.message === 'invalid_credentials' || err.status === 400 || err.message?.includes('Invalid login credentials')) {
+      if (err.message?.includes('Invalid login credentials')) {
         setError('Senha ou e-mail inválido');
-      } else if (err.message?.toLowerCase().includes('fetch') || err.message?.includes('network')) {
-        setError('Erro de conexão. Tente usar as credenciais mestres.');
       } else {
-        setError('Senha ou e-mail inválido');
+        setError(err.message || 'Erro ao conectar. Verifique sua conexão.');
       }
     } finally {
       setLoading(false);

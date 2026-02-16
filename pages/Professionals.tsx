@@ -1,40 +1,59 @@
 
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, UserPlus, Search, MoreHorizontal, Trash2, Edit3, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
-import { PROFESSIONALS, CURRENT_TENANT } from '../constants';
+import { Users, Plus, UserPlus, Trash2, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { getProfessionals, createProfessional, updateProfessional, deleteProfessional } from '../constants';
 import { Professional } from '../types';
+import { CURRENT_TENANT } from '../constants';
 
 export const Professionals: React.FC = () => {
-  const [staff, setStaff] = useState<Professional[]>(PROFESSIONALS);
+  const [staff, setStaff] = useState<Professional[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newName, setNewName] = useState('');
   const [newSpecialty, setNewSpecialty] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  // Sync with localStorage
+  const loadData = async () => {
+    setLoading(true);
+    const data = await getProfessionals();
+    setStaff(data);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    localStorage.setItem('jb_professionals_data', JSON.stringify(staff));
-  }, [staff]);
+    loadData();
+  }, []);
 
-  const handleAddStaff = (e: React.FormEvent) => {
+  const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !newSpecialty) return;
-    const newProfessional: Professional = {
-      id: staff.length > 0 ? Math.max(...staff.map(p => p.id)) + 1 : 1,
-      tenant_id: 1, name: newName, specialty: newSpecialty, active: true
-    };
-    setStaff([...staff, newProfessional]);
-    setNewName(''); setNewSpecialty(''); setShowAddModal(false);
-  };
+    
+    const { error } = await createProfessional({
+      name: newName,
+      specialty: newSpecialty,
+      active: true
+    });
 
-  const toggleStatus = (id: number) => {
-    setStaff(staff.map(p => p.id === id ? { ...p, active: !p.active } : p));
-  };
-
-  const removeStaff = (id: number) => {
-    if (confirm('Deseja realmente remover este profissional?')) {
-      setStaff(staff.filter(p => p.id !== id));
+    if (!error) {
+      loadData();
+      setNewName(''); 
+      setNewSpecialty(''); 
+      setShowAddModal(false);
     }
   };
+
+  const toggleStatus = async (id: number, currentStatus: boolean) => {
+    await updateProfessional(id, { active: !currentStatus });
+    loadData();
+  };
+
+  const removeStaff = async (id: number) => {
+    if (confirm('Deseja realmente remover este profissional?')) {
+      await deleteProfessional(id);
+      loadData();
+    }
+  };
+
+  if (loading) return <div className="p-10 text-center text-slate-400">Carregando equipe...</div>;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
@@ -86,7 +105,7 @@ export const Professionals: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => toggleStatus(pro.id)} className="p-3 bg-slate-50 text-slate-400 hover:text-amber-500 hover:bg-neutral-950 rounded-2xl transition-all shadow-sm" title={pro.active ? "Bloquear" : "Liberar"}>
+                <button onClick={() => toggleStatus(pro.id, pro.active)} className="p-3 bg-slate-50 text-slate-400 hover:text-amber-500 hover:bg-neutral-950 rounded-2xl transition-all shadow-sm" title={pro.active ? "Bloquear" : "Liberar"}>
                   <RefreshCw size={18} />
                 </button>
                 <button onClick={() => removeStaff(pro.id)} className="p-3 bg-slate-50 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all shadow-sm">
@@ -117,7 +136,7 @@ export const Professionals: React.FC = () => {
         <div className="fixed inset-0 bg-neutral-950/40 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl p-12 animate-in zoom-in-95 duration-300 border border-slate-100">
             <h3 className="text-3xl font-black text-neutral-950 mb-2 uppercase italic tracking-tighter">Novo Mestre</h3>
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-10">Cadastre um novo especialista na equipe {CURRENT_TENANT.name}.</p>
+            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-10">Cadastre um novo especialista na equipe {CURRENT_TENANT?.name || ''}.</p>
             
             <form onSubmit={handleAddStaff} className="space-y-8">
               <div className="space-y-2">

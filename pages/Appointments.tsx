@@ -5,67 +5,72 @@ import {
   Clock, 
   Search, 
   Filter, 
-  CheckCircle2, 
   XCircle, 
-  MoreVertical, 
-  ChevronLeft, 
-  ChevronRight,
-  User,
-  Scissors,
-  FileText,
-  Eye,
-  X,
-  Download,
-  ShieldCheck,
-  AlertCircle,
-  RefreshCw,
-  // Fix: Added missing icon imports
   Phone,
+  Scissors,
+  RefreshCw,
   Trash2
 } from 'lucide-react';
-import { MOCK_APPOINTMENTS, SERVICES, PROFESSIONALS } from '../constants';
-import { Appointment } from '../types';
+import { getAppointments, updateAppointment, deleteAppointment, getServices, getProfessionals } from '../constants';
+import { Appointment, Service, Professional } from '../types';
 
 export const Appointments: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
-  const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Initial load and sync with localStorage
-  useEffect(() => {
-    const savedAppts = localStorage.getItem('jb_appointments_data');
-    if (savedAppts) {
-      setAppointments(JSON.parse(savedAppts));
-    } else {
-      setAppointments(MOCK_APPOINTMENTS);
-      localStorage.setItem('jb_appointments_data', JSON.stringify(MOCK_APPOINTMENTS));
+  // Load data from Supabase
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [appts, servs, pros] = await Promise.all([
+        getAppointments(),
+        getServices(),
+        getProfessionals()
+      ]);
+      setAppointments(appts);
+      setServices(servs);
+      setProfessionals(pros);
+    } catch (error) {
+      console.error("Failed to load data", error);
+    } finally {
+      setLoading(false);
     }
-  }, []);
-
-  // Update localStorage when appointments change
-  const saveToStorage = (newAppts: Appointment[]) => {
-    setAppointments(newAppts);
-    localStorage.setItem('jb_appointments_data', JSON.stringify(newAppts));
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter(appt => {
       const matchesSearch = appt.user_name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus === 'todos' || appt.status === filterStatus;
       return matchesSearch && matchesStatus;
-    }).sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()); // Newest first
+    }); // Appointments are already sorted by backend
   }, [appointments, searchTerm, filterStatus]);
 
-  const updateStatus = (id: number, newStatus: any) => {
-    const updated = appointments.map(a => a.id === id ? { ...a, status: newStatus } : a);
-    saveToStorage(updated);
+  const handleUpdateStatus = async (id: number, newStatus: any) => {
+    const { error } = await updateAppointment(id, { status: newStatus });
+    if (!error) {
+      setAppointments(appointments.map(a => a.id === id ? { ...a, status: newStatus } : a));
+    } else {
+      alert("Erro ao atualizar status");
+    }
   };
 
-  const removeAppointment = (id: number) => {
+  const handleRemoveAppointment = async (id: number) => {
     if (confirm('Deseja realmente excluir este agendamento?')) {
-      const updated = appointments.filter(a => a.id !== id);
-      saveToStorage(updated);
+      const { error } = await deleteAppointment(id);
+      if (!error) {
+        setAppointments(appointments.filter(a => a.id !== id));
+      } else {
+        alert("Erro ao excluir agendamento");
+      }
     }
   };
 
@@ -87,6 +92,10 @@ export const Appointments: React.FC = () => {
       default: return 'bg-slate-50 text-slate-600 border-slate-100';
     }
   };
+
+  if (loading) {
+    return <div className="p-10 text-center text-slate-400">Carregando agenda...</div>;
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
@@ -135,8 +144,8 @@ export const Appointments: React.FC = () => {
             <tbody className="divide-y divide-slate-50">
               {filteredAppointments.length > 0 ? (
                 filteredAppointments.map((appt) => {
-                  const service = SERVICES.find(s => s.id === appt.service_id);
-                  const professional = PROFESSIONALS.find(p => p.id === appt.professional_id);
+                  const service = services.find(s => s.id === appt.service_id);
+                  const professional = professionals.find(p => p.id === appt.professional_id);
                   return (
                     <tr key={appt.id} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="px-10 py-6">
@@ -153,7 +162,7 @@ export const Appointments: React.FC = () => {
                       <td className="px-6 py-6">
                         <div className="flex items-center gap-2.5">
                           <Scissors size={14} className="text-amber-500" />
-                          <span className="text-sm font-bold text-slate-600 uppercase italic tracking-tight">{service?.name}</span>
+                          <span className="text-sm font-bold text-slate-600 uppercase italic tracking-tight">{service?.name || 'Desconhecido'}</span>
                         </div>
                         <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1">Mestre: {professional?.name || '---'}</p>
                       </td>
@@ -173,7 +182,7 @@ export const Appointments: React.FC = () => {
                         <div className="flex items-center gap-2">
                           {appt.status === 'pendente' && (
                             <button 
-                              onClick={() => updateStatus(appt.id, 'confirmado')}
+                              onClick={() => handleUpdateStatus(appt.id, 'confirmado')}
                               className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/10"
                             >
                               Confirmar
@@ -196,11 +205,11 @@ export const Appointments: React.FC = () => {
                       <td className="px-10 py-6 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
                           {appt.status !== 'cancelado' && (
-                            <button onClick={() => updateStatus(appt.id, 'cancelado')} className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all shadow-sm" title="Cancelar Reserva">
+                            <button onClick={() => handleUpdateStatus(appt.id, 'cancelado')} className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all shadow-sm" title="Cancelar Reserva">
                               <XCircle size={20} />
                             </button>
                           )}
-                          <button onClick={() => removeAppointment(appt.id)} className="p-2.5 text-slate-300 hover:text-neutral-950 hover:bg-white rounded-xl transition-all shadow-sm" title="Excluir Definitivo">
+                          <button onClick={() => handleRemoveAppointment(appt.id)} className="p-2.5 text-slate-300 hover:text-neutral-950 hover:bg-white rounded-xl transition-all shadow-sm" title="Excluir Definitivo">
                             <Trash2 size={18} />
                           </button>
                         </div>
@@ -230,7 +239,7 @@ export const Appointments: React.FC = () => {
         <div className="px-10 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
           <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest italic">Sistema de Agenda Viva - {filteredAppointments.length} Registros</p>
           <div className="flex items-center gap-3">
-            <button className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:bg-white transition-all shadow-sm">
+            <button onClick={() => loadData()} className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:bg-white transition-all shadow-sm">
               <RefreshCw size={18} />
             </button>
           </div>
