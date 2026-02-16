@@ -7,16 +7,12 @@ import {
   ChevronLeft,
   CheckCircle2,
   Phone,
-  MapPin,
   Scissors,
-  Instagram,
   Smartphone,
-  AlertCircle,
-  Lock,
   LayoutDashboard,
   Copy,
-  QrCode,
-  CalendarDays
+  CalendarDays,
+  Lock
 } from 'lucide-react';
 import { CURRENT_TENANT, SETTINGS, SERVICES, PROFESSIONALS } from '../constants';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -132,106 +128,162 @@ export const PublicBooking: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center pb-20">
-      <div className="w-full h-56 relative overflow-hidden flex items-center justify-center">
-         <img src={tenant.header_bg_url} className="w-full h-full object-cover opacity-40" alt="Banner" />
-         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-neutral-950"></div>
-         <div className="absolute z-10 flex flex-col items-center gap-4">
-           <div className="w-24 h-24 bg-neutral-950 rounded-[2rem] p-2 border border-neutral-800 flex items-center justify-center overflow-hidden shadow-2xl">
-             <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-contain" />
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center pb-20 font-sans">
+      
+      {/* HEADER PREMIUM REFORMULADO */}
+      <div className="relative w-full h-[45vh] min-h-[400px] flex flex-col items-center justify-center overflow-hidden">
+         {/* Background com Overlay */}
+         <div className="absolute inset-0">
+           <img src={tenant.header_bg_url} className="w-full h-full object-cover opacity-40 blur-sm scale-110" alt="Banner" />
+           <div className="absolute inset-0 bg-gradient-to-b from-neutral-950/30 via-neutral-950/50 to-neutral-950"></div>
+         </div>
+         
+         {/* Conteúdo Centralizado */}
+         <div className="relative z-10 flex flex-col items-center animate-in zoom-in-90 duration-1000">
+           {/* Imagem de Perfil com Borda Dourada */}
+           <div className="group relative">
+             <div className="absolute -inset-0.5 bg-gradient-to-br from-amber-300 to-amber-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+             <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full p-1.5 bg-neutral-950">
+                <img 
+                  src={tenant.logo_url} 
+                  alt={tenant.name} 
+                  className="w-full h-full object-cover rounded-full border-2 border-neutral-800"
+                />
+             </div>
            </div>
-           <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter">{tenant.name}</h1>
+
+           {/* Tipografia de Impacto */}
+           <div className="text-center mt-6 space-y-2">
+             <h1 className="text-4xl md:text-6xl font-black text-white italic uppercase tracking-tighter drop-shadow-2xl">
+               {tenant.name}
+             </h1>
+             <div className="flex items-center justify-center gap-4 text-amber-500/90">
+               <div className="h-px w-8 md:w-16 bg-gradient-to-r from-transparent to-amber-500"></div>
+               <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.5em]">Elite Experience</span>
+               <div className="h-px w-8 md:w-16 bg-gradient-to-l from-transparent to-amber-500"></div>
+             </div>
+           </div>
          </div>
       </div>
 
-      <div className="w-full max-w-lg px-4 -mt-6 relative z-20">
-        <div className="bg-neutral-900/90 backdrop-blur-3xl rounded-[3rem] border border-neutral-800/50 shadow-[0_0_50px_-20px_rgba(0,0,0,1)] overflow-hidden">
-          {step !== 'success' && (
-            <div className="p-8 pb-0">
-               <div className="flex items-center gap-4 mb-2">
-                  {step !== 'service' && (
-                    <button onClick={() => setStep(step === 'professional' ? 'service' : step === 'date' ? 'professional' : step === 'details' ? 'date' : 'details')} className="p-2.5 bg-neutral-800 rounded-xl hover:bg-neutral-700 transition-colors border border-neutral-700 active:scale-95">
-                      <ChevronLeft size={20} className="text-amber-500" />
-                    </button>
-                  )}
-                  <h2 className="text-xl font-black uppercase italic text-amber-500 tracking-tighter">{step}</h2>
-               </div>
-            </div>
-          )}
+      {/* ÁREA DE CONTEÚDO */}
+      <div className="w-full max-w-lg px-6 relative z-20 -mt-10">
+        
+        {step !== 'success' && (
+           <div className="mb-6 flex items-center justify-between">
+             {step !== 'service' && (
+                <button 
+                  onClick={() => setStep(step === 'professional' ? 'service' : step === 'date' ? 'professional' : step === 'details' ? 'date' : 'details')} 
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors bg-neutral-900/50 px-4 py-2 rounded-full border border-neutral-800 backdrop-blur-md"
+                >
+                  <ChevronLeft size={14} /> Voltar
+                </button>
+             )}
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 ml-auto">
+               Passo {step === 'service' ? '1' : step === 'professional' ? '2' : step === 'date' ? '3' : step === 'details' ? '4' : '5'} / 5
+             </span>
+           </div>
+        )}
 
-          <div className="p-8 pt-6">
+        <div className="space-y-6">
             {step === 'service' && (
-              <div className="space-y-3">
+              <div className="space-y-4 animate-in slide-in-from-bottom-8 duration-700">
+                <div className="flex items-center gap-3 mb-4">
+                   <div className="bg-amber-500 p-1.5 rounded-lg shadow-lg shadow-amber-500/20 rotate-3">
+                     <Scissors size={18} className="text-neutral-950" />
+                   </div>
+                   <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">Escolha o seu Estilo</h2>
+                </div>
+                
                 {availableServices.map(s => (
-                  <button key={s.id} onClick={() => { setSelectedServiceId(s.id); setStep('professional'); }} className="w-full flex items-center gap-4 p-4 bg-neutral-800/40 rounded-2xl border border-neutral-800 hover:border-amber-500 transition-all group">
-                    <div className="w-16 h-16 bg-neutral-800 rounded-xl overflow-hidden shadow-lg group-hover:scale-105 transition-transform border border-neutral-700">
-                       {s.image_url && <img src={s.image_url} className="w-full h-full object-cover" />}
+                  <button 
+                    key={s.id} 
+                    onClick={() => { setSelectedServiceId(s.id); setStep('professional'); }} 
+                    className="w-full group relative overflow-hidden bg-neutral-900/60 backdrop-blur-xl rounded-[2rem] border border-neutral-800 hover:border-amber-500/50 transition-all duration-300 p-4 flex items-center gap-5 text-left hover:bg-neutral-800/80 active:scale-[0.98]"
+                  >
+                    <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 border border-neutral-700 group-hover:border-amber-500/30 transition-colors shadow-2xl relative">
+                       {s.image_url && <img src={s.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />}
+                       <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/60 to-transparent"></div>
                     </div>
-                    <div className="text-left">
-                      <p className="font-black uppercase italic text-sm group-hover:text-amber-500 transition-colors">{s.name}</p>
-                      <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mt-1">R$ {s.price.toFixed(2)} • {s.duration_min} min</p>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-black uppercase italic text-white group-hover:text-amber-500 transition-colors truncate">{s.name}</h3>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="px-3 py-1 rounded-lg bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-wider border border-amber-500/20">
+                          R$ {s.price.toFixed(2)}
+                        </span>
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                          <Clock size={12} /> {s.duration_min} min
+                        </div>
+                      </div>
                     </div>
-                    <ChevronRight className="ml-auto text-neutral-600 group-hover:text-amber-500 transition-colors" size={18} />
+                    
+                    <div className="w-10 h-10 rounded-full bg-neutral-950 border border-neutral-800 flex items-center justify-center text-neutral-600 group-hover:text-amber-500 group-hover:border-amber-500/30 transition-all shadow-xl">
+                      <ChevronRight size={18} />
+                    </div>
                   </button>
                 ))}
               </div>
             )}
 
             {step === 'professional' && (
-               <div className="grid grid-cols-2 gap-4">
-                  {availableProfessionals.map(p => (
-                    <button key={p.id} onClick={() => { setSelectedProfessionalId(p.id); setStep('date'); }} className="p-6 bg-neutral-800/40 rounded-3xl border border-neutral-800 hover:border-amber-500 transition-all text-center group active:scale-95">
-                       <div className="w-14 h-14 bg-neutral-950 border-2 border-neutral-800 text-amber-500 rounded-2xl mx-auto mb-4 flex items-center justify-center font-black group-hover:border-amber-500 transition-all shadow-xl text-xl italic">{p.name[0]}</div>
-                       <p className="font-black uppercase text-xs tracking-tight group-hover:text-amber-500 transition-colors italic">{p.name}</p>
-                       <p className="text-[8px] text-neutral-500 font-bold uppercase mt-1 tracking-widest">{p.specialty}</p>
-                    </button>
-                  ))}
+               <div className="animate-in slide-in-from-right-8 duration-500">
+                  <div className="text-center mb-8">
+                    <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Quem vai te atender?</h2>
+                    <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mt-2">Selecione o especialista</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {availableProfessionals.map(p => (
+                      <button key={p.id} onClick={() => { setSelectedProfessionalId(p.id); setStep('date'); }} className="p-6 bg-neutral-900/60 backdrop-blur-md rounded-[2.5rem] border border-neutral-800 hover:border-amber-500 transition-all text-center group active:scale-95 hover:bg-neutral-800">
+                         <div className="w-20 h-20 bg-neutral-950 border-2 border-neutral-800 text-amber-500 rounded-3xl mx-auto mb-4 flex items-center justify-center font-black group-hover:border-amber-500 transition-all shadow-2xl text-3xl italic relative overflow-hidden">
+                           <span className="relative z-10">{p.name[0]}</span>
+                           <div className="absolute inset-0 bg-amber-500/10 scale-0 group-hover:scale-100 transition-transform rounded-3xl"></div>
+                         </div>
+                         <p className="font-black uppercase text-sm tracking-tight text-white group-hover:text-amber-500 transition-colors italic">{p.name}</p>
+                         <p className="text-[8px] text-neutral-500 font-black uppercase mt-2 tracking-[0.2em]">{p.specialty}</p>
+                      </button>
+                    ))}
+                  </div>
                </div>
             )}
 
             {step === 'date' && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
                 <div className="relative">
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-neutral-950 border border-amber-500/30 rounded-full z-10 shadow-xl">
-                    <span className="text-[9px] font-black text-amber-500 uppercase tracking-[0.2em] whitespace-nowrap italic">Selecione o Dia</span>
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-neutral-950 border border-amber-500/40 rounded-full z-10 shadow-xl">
+                    <span className="text-[9px] font-black text-amber-500 uppercase tracking-[0.3em] whitespace-nowrap italic">Escolha o Dia</span>
                   </div>
                   
-                  <div className="relative overflow-hidden rounded-[2rem] group">
-                    <div className="absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <CalendarDays className="text-amber-500/40 group-hover:text-amber-500 transition-colors" size={24} />
-                    </div>
+                  <div className="relative overflow-hidden rounded-[2.5rem] bg-neutral-900/50 border border-neutral-800 p-2">
                     <input 
                       type="date" 
-                      className="w-full bg-neutral-950 border-2 border-amber-500/60 p-6 pl-16 rounded-[2rem] text-amber-500 font-black text-center text-lg outline-none ring-4 ring-amber-500/5 shadow-[0_0_40px_-15px_rgba(245,158,11,0.4)] transition-all hover:border-amber-500 cursor-pointer italic" 
+                      className="w-full bg-transparent p-6 rounded-[2rem] text-white font-black text-center text-xl outline-none hover:bg-neutral-800/50 transition-all cursor-pointer italic appearance-none" 
                       value={selectedDate} 
                       onChange={e => setSelectedDate(e.target.value)} 
                     />
                   </div>
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 px-2">
-                    <div className="h-px flex-1 bg-neutral-800"></div>
-                    <span className="text-[9px] font-black text-neutral-500 uppercase tracking-[0.3em] italic">Horários Disponíveis</span>
-                    <div className="h-px flex-1 bg-neutral-800"></div>
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between px-2">
+                    <span className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] italic">Horários Disponíveis</span>
+                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{availableSlots.length} Vagas</span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                      {availableSlots.length > 0 ? (
                        availableSlots.map(t => (
                          <button 
                            key={t} 
                            onClick={() => { setSelectedTime(t); setStep('details'); }} 
-                           className="p-5 bg-neutral-800/40 border border-neutral-800 rounded-2xl text-xs font-black text-neutral-400 hover:bg-amber-500 hover:text-neutral-950 hover:border-amber-500 transition-all shadow-lg active:scale-95 group relative overflow-hidden"
+                           className="py-4 bg-neutral-900 border border-neutral-800 rounded-xl text-xs font-black text-neutral-300 hover:bg-amber-500 hover:text-black hover:border-amber-500 hover:scale-105 transition-all active:scale-95 shadow-lg"
                          >
-                           <span className="relative z-10 italic">{t}</span>
-                           <div className="absolute inset-0 bg-gradient-to-tr from-amber-400 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                           {t}
                          </button>
                        ))
                      ) : (
-                       <div className="col-span-3 py-10 text-center">
-                         <p className="text-[10px] font-black text-neutral-600 uppercase tracking-widest italic">Nenhum horário livre para este dia</p>
+                       <div className="col-span-full py-12 text-center bg-neutral-900/30 rounded-3xl border border-dashed border-neutral-800">
+                         <p className="text-[10px] font-black text-neutral-600 uppercase tracking-widest italic">Agenda lotada para este dia</p>
                        </div>
                      )}
                   </div>
@@ -240,43 +292,51 @@ export const PublicBooking: React.FC = () => {
             )}
 
             {step === 'details' && (
-              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-neutral-800/30 p-4 rounded-2xl border border-neutral-800 flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
-                    <Scissors size={20} className="text-amber-500" />
+              <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
+                <div className="bg-gradient-to-br from-neutral-900 to-neutral-950 p-8 rounded-[2.5rem] border border-neutral-800 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 text-white pointer-events-none">
+                     <CalendarDays size={120} />
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black text-neutral-500 uppercase tracking-widest italic">Resumo do Corte</p>
-                    <p className="text-sm font-black text-white italic uppercase tracking-tight">
-                      {selectedTime} • {new Date(selectedDate).toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'})}
-                    </p>
+                  <div className="relative z-10 flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-2xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20 -rotate-6">
+                      <Clock size={28} className="text-black" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.2em] italic mb-1">Confirmando Horário</p>
+                      <p className="text-2xl font-black text-white italic uppercase tracking-tighter">
+                        {selectedTime}
+                      </p>
+                      <p className="text-xs font-bold text-neutral-400 uppercase tracking-wide mt-1">
+                        {new Date(selectedDate).toLocaleDateString('pt-BR', {weekday: 'long', day: '2-digit', month: 'long'})}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-600 group-focus-within:text-amber-500 transition-colors">
-                      <Smartphone size={18} />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-neutral-600 group-focus-within:text-amber-500 transition-colors">
+                      <Smartphone size={20} />
                     </div>
                     <input 
                       type="text" 
                       placeholder="Seu Nome Completo" 
                       value={clientName} 
                       onChange={e => setClientName(e.target.value)} 
-                      className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 transition-all placeholder:text-neutral-700 italic" 
+                      className="w-full bg-neutral-900 border border-neutral-800 p-6 pl-14 rounded-3xl text-white font-bold outline-none focus:border-amber-500 focus:bg-neutral-950 transition-all placeholder:text-neutral-700 italic" 
                     />
                   </div>
 
                   <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-600 group-focus-within:text-amber-500 transition-colors">
-                      <Phone size={18} />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-neutral-600 group-focus-within:text-amber-500 transition-colors">
+                      <Phone size={20} />
                     </div>
                     <input 
                       type="tel" 
-                      placeholder="WhatsApp (ex: 8599451711)" 
+                      placeholder="Seu WhatsApp" 
                       value={clientPhone} 
                       onChange={e => setClientPhone(e.target.value)} 
-                      className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 transition-all placeholder:text-neutral-700 italic" 
+                      className="w-full bg-neutral-900 border border-neutral-800 p-6 pl-14 rounded-3xl text-white font-bold outline-none focus:border-amber-500 focus:bg-neutral-950 transition-all placeholder:text-neutral-700 italic" 
                     />
                   </div>
                 </div>
@@ -284,73 +344,71 @@ export const PublicBooking: React.FC = () => {
                 <button 
                   onClick={() => setStep('payment')} 
                   disabled={!clientName || !clientPhone}
-                  className="w-full py-6 bg-amber-500 text-neutral-950 font-black rounded-[2rem] uppercase italic shadow-2xl shadow-amber-500/20 active:scale-95 disabled:opacity-30 disabled:grayscale transition-all mt-4 tracking-widest"
+                  className="w-full py-6 bg-amber-500 text-black font-black rounded-[2.5rem] uppercase italic shadow-[0_20px_40px_-10px_rgba(245,158,11,0.3)] hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all mt-4 tracking-widest text-sm"
                 >
-                  Confirmar Dados
+                  Ir para Pagamento
                 </button>
               </div>
             )}
 
             {step === 'payment' && (
               <div className="space-y-8 text-center animate-in zoom-in-95 duration-500">
-                <div className="bg-neutral-950 p-8 rounded-[3rem] border border-neutral-800 flex flex-col items-center relative shadow-2xl">
-                   <div className="absolute -top-3 px-6 py-1 bg-amber-500 text-neutral-950 rounded-full">
-                     <span className="text-[10px] font-black uppercase tracking-widest italic">Pagar via PIX</span>
+                <div className="bg-neutral-900 p-10 rounded-[3rem] border border-neutral-800 flex flex-col items-center relative shadow-2xl">
+                   <div className="absolute -top-4 px-8 py-2 bg-amber-500 text-black rounded-full shadow-lg shadow-amber-500/20">
+                     <span className="text-[11px] font-black uppercase tracking-widest italic">Pagamento Instantâneo</span>
                    </div>
-                   <div className="p-4 bg-white rounded-3xl mb-6 shadow-2xl mt-4">
-                     <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(tenantSettings.pix_copy_paste || '')}`} className="w-44 h-44 rounded-xl" />
+                   
+                   <div className="bg-white p-4 rounded-3xl mb-8 mt-4 shadow-xl">
+                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(tenantSettings.pix_copy_paste || '')}`} className="w-48 h-48 rounded-xl" />
                    </div>
+                   
                    <button 
                     onClick={() => { navigator.clipboard.writeText(tenantSettings.pix_copy_paste || ''); alert('PIX Copiado!'); }} 
-                    className="flex items-center gap-3 text-[10px] font-black uppercase bg-neutral-900 border border-neutral-800 px-8 py-4 rounded-2xl hover:text-amber-500 transition-all shadow-lg text-neutral-400 group active:scale-95"
+                    className="flex items-center gap-3 text-[10px] font-black uppercase bg-neutral-950 border border-neutral-800 px-8 py-4 rounded-2xl hover:text-amber-500 hover:border-amber-500/50 transition-all shadow-lg text-neutral-400 group active:scale-95 w-full justify-center"
                    >
                      <Copy size={16} className="group-hover:scale-110 transition-transform"/> Copiar Código PIX
                    </button>
                 </div>
                 
-                <div className="space-y-4">
-                  <p className="text-[9px] text-neutral-600 font-bold uppercase tracking-widest leading-relaxed">
-                    A reserva será confirmada automaticamente após o pagamento.
-                  </p>
-                  <button 
-                    onClick={handleCreateAppointment} 
-                    disabled={submitting} 
-                    className="w-full py-6 bg-amber-500 text-neutral-950 font-black rounded-[2.5rem] uppercase tracking-[0.2em] italic shadow-[0_20px_40px_-10px_rgba(245,158,11,0.3)] transition-all active:scale-95 active:shadow-none"
-                  >
-                    {submitting ? 'RESERVANDO...' : 'JÁ REALIZEI O PAGAMENTO'}
-                  </button>
-                </div>
+                <button 
+                  onClick={handleCreateAppointment} 
+                  disabled={submitting} 
+                  className="w-full py-7 bg-amber-500 text-black font-black rounded-[3rem] uppercase tracking-[0.2em] italic shadow-[0_20px_40px_-10px_rgba(245,158,11,0.3)] hover:bg-amber-400 transition-all active:scale-95 active:shadow-none text-sm"
+                >
+                  {submitting ? 'PROCESSANDO...' : 'CONFIRMAR AGENDAMENTO'}
+                </button>
               </div>
             )}
 
             {step === 'success' && (
-              <div className="text-center py-12 space-y-8 animate-in zoom-in-95 duration-500">
-                <div className="relative mx-auto w-24 h-24">
-                  <div className="absolute inset-0 bg-amber-500/20 blur-2xl rounded-full"></div>
-                  <div className="relative w-24 h-24 bg-amber-500 text-neutral-950 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl rotate-6 border-4 border-neutral-900">
-                    <CheckCircle2 size={48} />
+              <div className="text-center py-12 space-y-8 animate-in zoom-in-95 duration-700">
+                <div className="relative mx-auto w-32 h-32">
+                  <div className="absolute inset-0 bg-emerald-500/30 blur-3xl rounded-full animate-pulse"></div>
+                  <div className="relative w-32 h-32 bg-emerald-500 text-neutral-950 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl rotate-3 border-4 border-neutral-900">
+                    <CheckCircle2 size={64} />
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-4xl font-black uppercase italic text-white tracking-tighter leading-none">Reservado!</h3>
-                  <p className="text-neutral-500 text-[10px] font-black uppercase tracking-[0.4em] mt-3">Sua cadeira está te esperando.</p>
+                  <h3 className="text-4xl font-black uppercase italic text-white tracking-tighter leading-none mb-4">Sucesso!</h3>
+                  <p className="text-neutral-400 text-xs font-bold uppercase tracking-widest max-w-xs mx-auto leading-relaxed">
+                    Seu horário foi reservado. <br/> Te esperamos no {tenant.name}.
+                  </p>
                 </div>
                 <button 
                   onClick={() => window.location.reload()} 
-                  className="w-full py-5 bg-neutral-800 rounded-2xl font-black uppercase italic border border-neutral-700 hover:bg-neutral-700 transition-colors tracking-widest shadow-xl"
+                  className="w-full py-6 bg-neutral-900 rounded-[2rem] font-black uppercase italic border border-neutral-800 hover:bg-neutral-800 transition-all tracking-widest shadow-xl text-xs text-neutral-300"
                 >
                   Novo Agendamento
                 </button>
               </div>
             )}
-          </div>
         </div>
-        
-        <div className="mt-10 text-center pb-10">
+
+        <div className="mt-20 text-center pb-12 border-t border-neutral-900/50 pt-10">
            {isAdmin ? (
-             <button onClick={() => navigate('/admin')} className="text-amber-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-80 transition-opacity bg-amber-500/5 px-6 py-3 rounded-full border border-amber-500/10 italic"><LayoutDashboard size={14}/> Voltar ao Painel Admin</button>
+             <button onClick={() => navigate('/admin')} className="text-amber-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-80 transition-opacity bg-amber-500/5 px-8 py-4 rounded-full border border-amber-500/20 italic mx-auto"><LayoutDashboard size={14}/> Voltar ao Admin</button>
            ) : (
-             <button onClick={() => navigate('/login')} className="text-neutral-700 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:text-neutral-500 transition-colors italic"><Lock size={12}/> Acesso Administrativo</button>
+             <button onClick={() => navigate('/login')} className="text-neutral-700 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:text-neutral-500 transition-colors italic tracking-[0.3em] mx-auto"><Lock size={12}/> Acesso Corporativo</button>
            )}
         </div>
       </div>

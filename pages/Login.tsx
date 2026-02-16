@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { Lock, Mail, ShieldCheck, AlertCircle, Scissors, ArrowRight, Zap, RefreshCw } from 'lucide-react';
+import { Lock, Mail, ShieldCheck, AlertCircle, Scissors, ArrowRight, RefreshCw } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -15,7 +15,7 @@ export const Login: React.FC = () => {
     e.preventDefault();
     
     if (!email || !password) {
-      setError('Por favor, preencha todos os campos.');
+      setError('Senha ou e-mail inválido');
       return;
     }
 
@@ -34,32 +34,32 @@ export const Login: React.FC = () => {
         return;
       }
 
-      // 2. Se não for a mestre, tenta o Supabase (fallback)
-      const { data, error: authError } = await (supabase.auth as any).signInWithPassword({
+      // 2. Se não for a mestre, tenta o Supabase (fallback para outros usuários se houver)
+      const { error: authError } = await (supabase.auth as any).signInWithPassword({
         email: email.trim(),
         password: password,
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        throw new Error('invalid_credentials');
+      }
       
       localStorage.removeItem('jb_admin_session');
       navigate('/admin', { replace: true });
     } catch (err: any) {
       console.error("Erro de login:", err);
       
-      if (err.message?.toLowerCase().includes('fetch') || err.message?.includes('network')) {
-        setError('Erro de conexão. Use suas credenciais mestres para entrar.');
+      // Mensagem personalizada conforme solicitado pelo usuário
+      if (err.message === 'invalid_credentials' || err.status === 400 || err.message?.includes('Invalid login credentials')) {
+        setError('Senha ou e-mail inválido');
+      } else if (err.message?.toLowerCase().includes('fetch') || err.message?.includes('network')) {
+        setError('Erro de conexão. Tente usar as credenciais mestres.');
       } else {
-        setError('E-mail ou senha incorretos.');
+        setError('Senha ou e-mail inválido');
       }
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDemoAccess = () => {
-    localStorage.setItem('jb_admin_session', 'true');
-    navigate('/admin', { replace: true });
   };
 
   return (
@@ -76,7 +76,7 @@ export const Login: React.FC = () => {
         <div className="bg-neutral-900/50 backdrop-blur-2xl p-10 rounded-[3rem] border border-neutral-800 shadow-2xl">
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1 mb-2 block">Seu E-mail</label>
+              <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1 mb-2 block">E-mail</label>
               <div className="relative">
                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-600" size={20} />
                 <input 
@@ -84,7 +84,7 @@ export const Login: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 transition-all"
-                  placeholder="admin@email.com"
+                  placeholder="Seu e-mail"
                   autoComplete="email"
                   required
                 />
@@ -92,7 +92,7 @@ export const Login: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1 mb-2 block">Sua Senha</label>
+              <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1 mb-2 block">Senha</label>
               <div className="relative">
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-600" size={20} />
                 <input 
@@ -100,7 +100,7 @@ export const Login: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-neutral-950 border border-neutral-800 p-5 pl-14 rounded-2xl text-white font-bold outline-none focus:border-amber-500 transition-all"
-                  placeholder="••••••••"
+                  placeholder="Sua senha"
                   autoComplete="current-password"
                   required
                 />
@@ -108,24 +108,24 @@ export const Login: React.FC = () => {
             </div>
 
             {error && (
-              <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl text-rose-500 text-[10px] font-bold uppercase flex items-center gap-3 animate-pulse">
-                <AlertCircle size={18} /> {error}
+              <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl text-rose-500 text-[11px] font-black uppercase tracking-tight flex items-center gap-3 animate-in fade-in zoom-in-95 duration-300">
+                <AlertCircle size={18} className="shrink-0" /> {error}
               </div>
             )}
 
             <button 
               type="submit"
               disabled={loading}
-              className="w-full py-6 bg-amber-500 text-neutral-950 font-black rounded-2xl hover:bg-amber-400 transition-all flex items-center justify-center gap-3 uppercase tracking-widest italic disabled:opacity-50 shadow-lg shadow-amber-500/10"
+              className="w-full py-6 bg-amber-500 text-neutral-950 font-black rounded-2xl hover:bg-amber-400 transition-all flex items-center justify-center gap-3 uppercase tracking-widest italic disabled:opacity-50 shadow-lg shadow-amber-500/10 active:scale-95"
             >
               {loading ? <RefreshCw className="animate-spin" /> : <ShieldCheck size={20} />}
-              Autenticar Acesso
+              {loading ? 'Validando...' : 'Entrar no Painel'}
             </button>
           </form>
         </div>
         
-        <button onClick={() => navigate('/')} className="mt-8 w-full text-neutral-600 hover:text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
-          Voltar para o site <ArrowRight size={14} />
+        <button onClick={() => navigate('/')} className="mt-8 w-full text-neutral-600 hover:text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors italic">
+          Voltar para Agendamentos <ArrowRight size={14} />
         </button>
       </div>
     </div>
