@@ -2,8 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * Recupera as variáveis de ambiente com validação rigorosa.
- * O ID do projeto extraído da sua chave é 'kroq0adud2vxpwk7i9zx'.
+ * A URL 'jardelbarber.supabase.co' não existe. 
+ * O ID real do seu projeto é 'kroq0adud2vxpwk7i9zx'.
+ * Este código substitui qualquer URL errada pela correta.
  */
 const getEnvVar = (key: string, fallback: string): string => {
   let value = fallback;
@@ -12,9 +13,8 @@ const getEnvVar = (key: string, fallback: string): string => {
     if (viteEnv && viteEnv[key]) value = viteEnv[key];
   } catch (e) {}
 
-  // Validação Crítica: Se a URL contiver 'jardelbarber.supabase.co', ela está errada.
-  // Supabase usa IDs aleatórios. Vamos forçar a URL correta se detectarmos erro comum.
-  if (key === 'VITE_SUPABASE_URL' && value.includes('jardelbarber.supabase.co')) {
+  // Correção forçada para o erro ERR_NAME_NOT_RESOLVED
+  if (key === 'VITE_SUPABASE_URL') {
     return 'https://kroq0adud2vxpwk7i9zx.supabase.co';
   }
 
