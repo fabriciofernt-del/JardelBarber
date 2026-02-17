@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Plus, 
@@ -160,13 +159,11 @@ export const Services: React.FC = () => {
         {filteredServices.map((service) => (
           <div key={service.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden group">
             <div className="aspect-[4/3] bg-neutral-950 relative overflow-hidden">
-              {service.image_url ? (
-                <ImageFallback src={service.image_url} alt={service.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-90 group-hover:opacity-100" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-neutral-800">
-                  <ImageIcon size={64} strokeWidth={1} />
-                </div>
-              )}
+              <ImageFallback 
+                src={service.image_url || ''} 
+                alt={service.name} 
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-90 group-hover:opacity-100" 
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent opacity-60"></div>
               <div className="absolute top-6 right-6 flex gap-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                 <button onClick={() => handleOpenModal(service)} className="p-3 bg-white text-neutral-950 rounded-2xl hover:bg-amber-500 transition-all shadow-2xl">
@@ -231,14 +228,11 @@ export const Services: React.FC = () => {
                     onClick={() => fileInputRef.current?.click()}
                     className="w-40 h-40 rounded-[2.5rem] bg-neutral-50 border-4 border-dashed border-slate-100 flex flex-col items-center justify-center text-slate-300 relative overflow-hidden group shadow-inner cursor-pointer hover:border-amber-500/50 transition-all"
                   >
-                    {imageUrl ? (
-                      <ImageFallback src={imageUrl} className="w-full h-full object-cover" alt="Preview" />
-                    ) : (
-                      <>
-                        <Camera size={32} className="mb-3 text-slate-200" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Preview da Imagem</span>
-                      </>
-                    )}
+                    <ImageFallback 
+                      src={imageUrl || ''} 
+                      className="w-full h-full object-cover" 
+                      alt="Preview" 
+                    />
                     <div className="absolute inset-0 bg-neutral-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-2">
                        <Upload size={24} />
                        <span className="text-[10px] font-black uppercase tracking-widest">Upar Foto</span>

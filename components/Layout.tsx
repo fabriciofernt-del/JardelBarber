@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -12,7 +11,6 @@ import {
   Briefcase,
   Scissors,
   DollarSign,
-  User,
   Share2,
   Menu,
   X
@@ -116,7 +114,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <div className="pt-6 border-t border-neutral-900">
             <div className="flex items-center gap-3 px-2 mb-6 text-left">
               <div className="w-10 h-10 rounded-xl border-2 border-neutral-800 overflow-hidden bg-neutral-900 shrink-0">
-                {tenant.logo_url && <ImageFallback src={tenant.logo_url} alt="Logo" className="w-full h-full object-cover" />}
+                <ImageFallback src={tenant.logo_url || ''} alt="Logo" className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-black text-white truncate italic uppercase tracking-tighter">Admin Master</span>
@@ -155,9 +153,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <main className="flex-1 lg:ml-64 p-4 md:p-8 lg:p-10 transition-all duration-300">
           <header className="hidden lg:flex justify-between items-center mb-10">
             <div className="flex items-center gap-6">
-              <div className="w-16 h-16 rounded-2xl bg-neutral-950 p-1 shadow-xl border-2 border-white overflow-hidden flex items-center justify-center">
-                {tenant.logo_url ? <ImageFallback src={tenant.logo_url} alt="Logo" className="w-full h-full object-contain" /> : <User className="text-amber-500" />}
-              </div>
+              <ImageFallback 
+                src={tenant.logo_url || ''} 
+                alt={`${tenant.name} logo`} 
+                className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-xl" 
+              />
               <div>
                 <h2 className="text-2xl font-black text-neutral-950 tracking-tighter uppercase italic leading-none">
                   Bem-vindo, <span className="text-amber-500">Jardel</span>!

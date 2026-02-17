@@ -7,28 +7,19 @@ interface ImageProps {
   fallback?: string;
 }
 
-export const ImageFallback = ({ src, alt, className, fallback = '/placeholder.jpg' }: ImageProps) => {
+export const ImageFallback = ({ src, alt, className, fallback = 'https://via.placeholder.com/400x300/333/fff?text=Serviço' }: ImageProps) => {
   const [imgSrc, setImgSrc] = useState(src);
-  const [errored, setErrored] = useState(false);
-
+  
   useEffect(() => {
     setImgSrc(src);
-    setErrored(false);
   }, [src]);
-
-  const handleError = () => {
-    if (!errored) {
-      setImgSrc(fallback);
-      setErrored(true);
-    }
-  };
 
   return (
     <img
       src={imgSrc}
       alt={alt}
-      className={className}
-      onError={handleError}
+      className={className || 'w-full h-64 object-cover rounded-lg'}
+      onError={(e) => (e.currentTarget.src = fallback)}
       loading="lazy"
     />
   );
