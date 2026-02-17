@@ -37,38 +37,49 @@ export const DEFAULT_SETTINGS: TenantSettings = {
 // --- API FUNCTIONS ---
 
 export const getTenant = async (): Promise<Tenant> => {
+  // Alterado de .single() para .maybeSingle() para evitar erro 406/JSON se vazio
   const { data, error } = await supabase
     .from('tenants')
     .select('*')
     .eq('id', TENANT_ID)
-    .single();
+    .maybeSingle();
   
-  if (error) console.error('Error fetching tenant:', error);
+  if (error) {
+    console.warn('Warning fetching tenant (using default):', error.message);
+    return DEFAULT_TENANT;
+  }
+  
   return data || DEFAULT_TENANT;
 };
 
 export const updateTenant = async (updates: Partial<Tenant>) => {
   const { error } = await supabase.from('tenants').update(updates).eq('id', TENANT_ID);
+  if (error) console.warn('Error updating tenant:', error.message);
   return { error };
 };
 
 export const getSettings = async (): Promise<TenantSettings> => {
+  // Alterado de .single() para .maybeSingle()
   const { data, error } = await supabase
     .from('tenant_settings')
     .select('*')
     .eq('tenant_id', TENANT_ID)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    console.warn('Settings not found, returning defaults');
+  if (error || !data) {
+    console.warn('Settings not found or error, returning defaults:', error?.message);
     return DEFAULT_SETTINGS;
   }
   return data;
 };
 
 export const updateSettings = async (updates: Partial<TenantSettings>) => {
-  // Check if settings exist first
-  const { data } = await supabase.from('tenant_settings').select('id').eq('tenant_id', TENANT_ID).single();
+  // Check if settings exist first using maybeSingle
+  const { data } = await supabase
+    .from('tenant_settings')
+    .select('id')
+    .eq('tenant_id', TENANT_ID)
+    .maybeSingle();
   
   if (data) {
     const { error } = await supabase.from('tenant_settings').update(updates).eq('tenant_id', TENANT_ID);
@@ -86,7 +97,10 @@ export const getServices = async (): Promise<Service[]> => {
     .eq('tenant_id', TENANT_ID)
     .order('name');
   
-  if (error) console.error('Error fetching services:', error);
+  if (error) {
+    console.warn('Warning fetching services:', error.message);
+    return [];
+  }
   return data || [];
 };
 
@@ -112,7 +126,10 @@ export const getProfessionals = async (): Promise<Professional[]> => {
     .eq('tenant_id', TENANT_ID)
     .order('name');
 
-  if (error) console.error('Error fetching professionals:', error);
+  if (error) {
+    console.warn('Warning fetching professionals:', error.message);
+    return [];
+  }
   return data || [];
 };
 
@@ -138,7 +155,10 @@ export const getAppointments = async (): Promise<Appointment[]> => {
     .eq('tenant_id', TENANT_ID)
     .order('start_time', { ascending: false });
 
-  if (error) console.error('Error fetching appointments:', error);
+  if (error) {
+    console.warn('Warning fetching appointments:', error.message);
+    return [];
+  }
   return data || [];
 };
 
@@ -165,7 +185,7 @@ export const getRevenue = async (): Promise<RevenueEntry[]> => {
     .order('date', { ascending: false });
     
   if (error) {
-    console.warn('Revenue table might not exist or error fetching:', error);
+    console.warn('Revenue table might not exist or error fetching (ignoring):', error.message);
     return [];
   }
   return data || [];
