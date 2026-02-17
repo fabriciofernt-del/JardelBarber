@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 interface ImageProps {
@@ -7,7 +8,7 @@ interface ImageProps {
   fallback?: string;
 }
 
-export const ImageFallback = ({ src, alt, className, fallback = 'https://via.placeholder.com/400x300/333/fff?text=Serviço' }: ImageProps) => {
+export const ImageFallback = ({ src, alt, className, fallback = 'https://picsum.photos/400/300?random=1' }: ImageProps) => {
   const [imgSrc, setImgSrc] = useState(src);
   
   useEffect(() => {
