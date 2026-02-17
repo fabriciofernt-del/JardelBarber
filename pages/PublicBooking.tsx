@@ -5,7 +5,7 @@ import {
   Clock, 
   ChevronRight, 
   ChevronLeft,
-  CheckCircle2,
+  CheckCircle2, 
   Phone,
   Scissors,
   Smartphone,
@@ -26,6 +26,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tenant, TenantSettings, Service, Professional } from '../types';
 import { supabase } from '../supabaseClient';
+import { ImageFallback } from '../components/ImageFallback';
 
 type BookingStep = 'service' | 'professional' | 'date' | 'details' | 'payment' | 'success';
 
@@ -163,7 +164,7 @@ export const PublicBooking: React.FC = () => {
       <div className="relative w-full h-[45vh] min-h-[400px] flex flex-col items-center justify-center overflow-hidden">
          {/* Background com Overlay */}
          <div className="absolute inset-0">
-           <img src={tenant.header_bg_url || 'https://images.unsplash.com/photo-1599351431247-f10b21817021'} className="w-full h-full object-cover opacity-40 blur-sm scale-110" alt="Banner" />
+           <ImageFallback src={tenant.header_bg_url || 'https://images.unsplash.com/photo-1599351431247-f10b21817021'} className="w-full h-full object-cover opacity-40 blur-sm scale-110" alt="Banner" />
            <div className="absolute inset-0 bg-gradient-to-b from-neutral-950/30 via-neutral-950/50 to-neutral-950"></div>
          </div>
          
@@ -173,7 +174,7 @@ export const PublicBooking: React.FC = () => {
            <div className="group relative">
              <div className="absolute -inset-0.5 bg-gradient-to-br from-amber-300 to-amber-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
              <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full p-1.5 bg-neutral-950">
-                <img 
+                <ImageFallback 
                   src={tenant.logo_url || 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1'} 
                   alt={tenant.name} 
                   className="w-full h-full object-cover rounded-full border-2 border-neutral-800"
@@ -235,7 +236,7 @@ export const PublicBooking: React.FC = () => {
                     className="w-full group relative overflow-hidden bg-neutral-900/60 backdrop-blur-xl rounded-[2rem] border border-neutral-800 hover:border-amber-500/50 transition-all duration-300 p-4 flex items-center gap-5 text-left hover:bg-neutral-800/80 active:scale-[0.98]"
                   >
                     <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 border border-neutral-700 group-hover:border-amber-500/30 transition-colors shadow-2xl relative">
-                       {s.image_url ? <img src={s.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full bg-neutral-800" />}
+                       {s.image_url ? <ImageFallback src={s.image_url} alt={s.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full bg-neutral-800" />}
                        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/60 to-transparent"></div>
                     </div>
                     
@@ -392,7 +393,7 @@ export const PublicBooking: React.FC = () => {
                    </div>
                    
                    <div className="bg-white p-4 rounded-3xl mb-8 mt-4 shadow-xl">
-                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(tenantSettings.pix_copy_paste || '')}`} className="w-48 h-48 rounded-xl" />
+                      <ImageFallback src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(tenantSettings.pix_copy_paste || '')}`} alt="QR Code PIX" className="w-48 h-48 rounded-xl" />
                    </div>
                    
                    <button 

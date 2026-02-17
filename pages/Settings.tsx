@@ -15,6 +15,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { getTenant, getSettings, updateTenant, updateSettings, DEFAULT_TENANT, DEFAULT_SETTINGS } from '../constants';
+import { ImageFallback } from '../components/ImageFallback';
 
 export const Settings: React.FC = () => {
   const [tenantName, setTenantName] = useState('');
@@ -118,11 +119,10 @@ export const Settings: React.FC = () => {
         {/* Header Preview / Cover Photo */}
         <div className="h-64 bg-neutral-950 relative overflow-hidden group/header">
           {headerBgUrl ? (
-            <img 
+            <ImageFallback 
               src={headerBgUrl} 
               alt="Background Preview" 
               className="w-full h-full object-cover opacity-60 group-hover/header:scale-105 transition-transform duration-700" 
-              onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=1200&auto=format&fit=crop'; }}
             />
           ) : (
             <div className="w-full h-full bg-neutral-900 flex flex-col items-center justify-center gap-2">
@@ -146,11 +146,10 @@ export const Settings: React.FC = () => {
             <div className="relative group/logo">
               <div className="w-40 h-40 rounded-[2.5rem] bg-neutral-950 p-2 shadow-[0_25px_60px_-10px_rgba(0,0,0,0.6)] border-4 border-white overflow-hidden flex items-center justify-center">
                 {logoUrl ? (
-                  <img 
+                  <ImageFallback 
                     src={logoUrl} 
                     alt="Logo Preview" 
                     className="w-full h-full object-contain"
-                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=400&h=400&auto=format&fit=crop'; }}
                   />
                 ) : (
                   <span className="text-3xl font-black text-amber-500 italic">JB</span>
@@ -292,7 +291,7 @@ export const Settings: React.FC = () => {
                       className="w-32 h-32 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300 hover:border-amber-500 transition-all cursor-pointer bg-slate-50 relative overflow-hidden group"
                     >
                       {pixQrUrl ? (
-                        <img src={pixQrUrl} className="w-full h-full object-contain" alt="PIX QR" />
+                        <ImageFallback src={pixQrUrl} className="w-full h-full object-contain" alt="PIX QR" />
                       ) : (
                         <QrCode size={24} />
                       )}

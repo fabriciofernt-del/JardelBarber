@@ -4,6 +4,7 @@ import { Users, Plus, UserPlus, Trash2, CheckCircle2, XCircle, RefreshCw } from 
 import { getProfessionals, createProfessional, updateProfessional, deleteProfessional } from '../constants';
 import { Professional } from '../types';
 import { CURRENT_TENANT } from '../constants';
+import { ImageFallback } from '../components/ImageFallback';
 
 export const Professionals: React.FC = () => {
   const [staff, setStaff] = useState<Professional[]>([]);
@@ -97,8 +98,12 @@ export const Professionals: React.FC = () => {
           <div key={pro.id} className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group relative overflow-hidden">
             <div className="flex items-start justify-between mb-8">
               <div className="relative">
-                <div className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center text-3xl font-black italic ring-8 ring-offset-4 transition-all duration-500 ${pro.active ? 'bg-neutral-950 text-amber-500 ring-amber-500/5 ring-offset-white group-hover:rotate-6' : 'bg-slate-100 text-slate-400 ring-slate-50'}`}>
-                  {pro.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                <div className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center text-3xl font-black italic ring-8 ring-offset-4 transition-all duration-500 overflow-hidden ${pro.active ? 'bg-neutral-950 text-amber-500 ring-amber-500/5 ring-offset-white group-hover:rotate-6' : 'bg-slate-100 text-slate-400 ring-slate-50'}`}>
+                  {pro.avatar_url ? (
+                    <ImageFallback src={pro.avatar_url} alt={pro.name} className="w-full h-full object-cover" />
+                  ) : (
+                    pro.name.split(' ').map(n => n[0]).join('').toUpperCase()
+                  )}
                 </div>
                 <div className={`absolute -bottom-1 -right-1 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center shadow-lg ${pro.active ? 'bg-emerald-500' : 'bg-slate-300'}`}>
                   {pro.active ? <CheckCircle2 size={16} className="text-white" /> : <XCircle size={16} className="text-white" />}
