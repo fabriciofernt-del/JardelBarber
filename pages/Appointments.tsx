@@ -75,13 +75,16 @@ export const Appointments: React.FC = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    // Espera algo como "2026-02-19T13:00:00"
+    const [datePart] = dateStr.split('T'); // "2026-02-19"
+    const [year, month, day] = datePart.split('-');
+    return `${day}/${month}/${year}`; // 19/02/2026
   };
 
   const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const [, timePart = ''] = dateStr.split('T'); // "13:00:00"
+    const [hh = '00', mm = '00'] = timePart.split(':');
+    return `${hh}:${mm}`; // 13:00
   };
 
   const getStatusStyle = (status: string) => {

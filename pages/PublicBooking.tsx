@@ -117,24 +117,33 @@ export const PublicBooking: React.FC = () => {
     if (!selectedService || !selectedTime) return;
 
     setSubmitting(true);
-    
-    // Calculate End Time
-    const startDateTime = new Date(`${selectedDate}T${selectedTime}:00`);
-    const endDateTime = new Date(startDateTime.getTime() + selectedService.duration_min * 60000);
+
+    // Montar horário em local time, sem converter para UTC
+    const [h, m] = selectedTime.split(':').map(Number);
+
+    const startLocal = new Date(selectedDate);
+    startLocal.setHours(h, m, 0, 0);
+
+    const endLocal = new Date(startLocal.getTime() + selectedService.duration_min * 60000);
+
+    // Salvar como string local, sem Z no final
+    const start_time = `${selectedDate}T${selectedTime}:00`; // ex: 2026-02-19T13:00:00
+    const end_time = `${selectedDate}T${String(endLocal.getHours()).padStart(2, '0')}:${String(
+      endLocal.getMinutes()
+    ).padStart(2, '0')}:00`;
 
     const appointmentData = {
       user_name: clientName,
       user_phone: clientPhone,
       service_id: selectedServiceId!,
       professional_id: selectedProfessionalId!,
-      start_time: startDateTime.toISOString(),
-      end_time: endDateTime.toISOString(),
+      start_time,
+      end_time,
       status: 'pendente' as const,
     };
 
     try {
       const { error } = await createAppointment(appointmentData);
-      
       if (error) {
         alert('Erro ao agendar. Tente novamente.');
         console.error(error);
