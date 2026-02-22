@@ -113,46 +113,60 @@ export const PublicBooking: React.FC = () => {
     const [endHour, endMin] = tenantSettings.work_end.split(':').map(Number);
     const stepMin = tenantSettings.slot_step_min;
 
-    const today = new Date().toISOString().split('T')[0];
-    const isToday = selectedDate === today;
     const now = new Date();
+    const isToday = selectedDate === now.toISOString().split('T')[0];
 
-    let current = new Date();
-    current.setHours(startHour, startMin, 0, 0);
-    const end = new Date();
-    end.setHours(endHour, endMin, 0, 0);
+    // Converter agendamentos do dia em intervalos de minutos desde 00:00
+    // Ex.: 13:00 => 13 * 60 + 0 = 780
+    const busyIntervals = dayAppointments
+      .map(appt => {
+        // start_time e end_time no formato "YYYY-MM-DDTHH:MM:SS"
+        const startTimePart = appt.start_time.split('T')[1]?.slice(0, 5); // "HH:MM"
+        const endTimePart = appt.end_time.split('T')[1]?.slice(0, 5);
 
-    // Converte dayAppointments em intervalos numéricos (timestamp) para facilitar a comparação
-    const occupiedIntervals = dayAppointments.map(appt => {
-      const start = new Date(appt.start_time).getTime();
-      const end = new Date(appt.end_time).getTime();
-      return { start, end };
-    });
+        if (!startTimePart || !endTimePart) return null;
 
-    while (current < end) {
-      const hours = current.getHours().toString().padStart(2, '0');
-      const minutes = current.getMinutes().toString().padStart(2, '0');
-      const timeString = `${hours}:${minutes}`;
+        const [sh, sm] = startTimePart.split(':').map(Number);
+        const [eh, em] = endTimePart.split(':').map(Number);
 
-      const slotStart = new Date(selectedDate);
-      slotStart.setHours(current.getHours(), current.getMinutes(), 0, 0);
-      const slotEnd = new Date(slotStart.getTime() + selectedService.duration_min * 60000);
+        const start = sh * 60 + sm;
+        const end = eh * 60 + em;
 
-      const slotStartMs = slotStart.getTime();
-      const slotEndMs = slotEnd.getTime();
+        return { start, end };
+      })
+      .filter(Boolean) as { start: number; end: number }[];
 
-      // Verifica se esse intervalo [slotStartMs, slotEndMs) conflita com algum agendamento existente
-      const hasConflict = occupiedIntervals.some(({ start, end }) => {
-        return slotStartMs < end && slotEndMs > start;
+    let currentMins = startHour * 60 + startMin;
+    const endMinsLimit = endHour * 60 + endMin;
+
+    while (currentMins < endMinsLimit) {
+      const slotStart = currentMins;
+      const slotEnd = currentMins + selectedService.duration_min;
+
+      // Verifica conflito com qualquer agendamento existente
+      const isBusy = busyIntervals.some(interval => {
+        // conflito se [slotStart, slotEnd) intersectar [interval.start, interval.end)
+        return slotStart < interval.end && slotEnd > interval.start;
       });
-      
-      // Basic check: if today, don't show past times
-      if (!hasConflict && (!isToday || current > now)) {
-        slots.push(timeString);
+
+      // Verifica se o horário já passou, quando o dia é hoje
+      let isPast = false;
+      if (isToday) {
+        const nowMins = now.getHours() * 60 + now.getMinutes();
+        if (slotStart <= nowMins) isPast = true;
       }
-      
-      current.setMinutes(current.getMinutes() + stepMin);
+
+      if (!isBusy && !isPast) {
+        const h = Math.floor(currentMins / 60)
+          .toString()
+          .padStart(2, '0');
+        const m = (currentMins % 60).toString().padStart(2, '0');
+        slots.push(`${h}:${m}`);
+      }
+
+      currentMins += stepMin;
     }
+
     return slots;
   }, [selectedDate, tenantSettings, selectedService, selectedProfessionalId, dayAppointments]);
 
