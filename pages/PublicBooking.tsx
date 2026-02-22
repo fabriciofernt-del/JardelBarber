@@ -20,11 +20,12 @@ import {
   getServices, 
   getProfessionals, 
   createAppointment,
+  getAppointments,
   DEFAULT_TENANT,
   DEFAULT_SETTINGS
 } from '../constants';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Tenant, TenantSettings, Service, Professional } from '../types';
+import { Tenant, TenantSettings, Service, Professional, Appointment } from '../types';
 import { supabase } from '../supabaseClient';
 import { ImageFallback } from '../components/ImageFallback';
 
@@ -39,6 +40,7 @@ export const PublicBooking: React.FC = () => {
   
   const [availableServices, setAvailableServices] = useState<Service[]>([]);
   const [availableProfessionals, setAvailableProfessionals] = useState<Professional[]>([]);
+  const [dayAppointments, setDayAppointments] = useState<Appointment[]>([]);
 
   const [step, setStep] = useState<BookingStep>('service');
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
@@ -79,11 +81,33 @@ export const PublicBooking: React.FC = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const loadDayAppointments = async () => {
+      if (!selectedDate || !selectedProfessionalId) {
+        setDayAppointments([]);
+        return;
+      }
+
+      const all = await getAppointments();
+      const filtered = all.filter(appt => {
+        const [datePart] = appt.start_time.split('T');
+        const sameDate = datePart === selectedDate;
+        const samePro = appt.professional_id === selectedProfessionalId;
+        const activeStatus = appt.status === 'pendente' || appt.status === 'confirmado';
+        return sameDate && samePro && activeStatus;
+      });
+
+      setDayAppointments(filtered);
+    };
+
+    loadDayAppointments();
+  }, [selectedDate, selectedProfessionalId]);
+
   const selectedService = useMemo(() => availableServices.find(s => s.id === selectedServiceId), [availableServices, selectedServiceId]);
 
   const availableSlots = useMemo(() => {
     const slots: string[] = [];
-    if (!tenantSettings.work_start) return slots;
+    if (!tenantSettings.work_start || !selectedService || !selectedProfessionalId) return slots;
 
     const [startHour, startMin] = tenantSettings.work_start.split(':').map(Number);
     const [endHour, endMin] = tenantSettings.work_end.split(':').map(Number);
@@ -98,20 +122,39 @@ export const PublicBooking: React.FC = () => {
     const end = new Date();
     end.setHours(endHour, endMin, 0, 0);
 
+    // Converte dayAppointments em intervalos numéricos (timestamp) para facilitar a comparação
+    const occupiedIntervals = dayAppointments.map(appt => {
+      const start = new Date(appt.start_time).getTime();
+      const end = new Date(appt.end_time).getTime();
+      return { start, end };
+    });
+
     while (current < end) {
       const hours = current.getHours().toString().padStart(2, '0');
       const minutes = current.getMinutes().toString().padStart(2, '0');
       const timeString = `${hours}:${minutes}`;
+
+      const slotStart = new Date(selectedDate);
+      slotStart.setHours(current.getHours(), current.getMinutes(), 0, 0);
+      const slotEnd = new Date(slotStart.getTime() + selectedService.duration_min * 60000);
+
+      const slotStartMs = slotStart.getTime();
+      const slotEndMs = slotEnd.getTime();
+
+      // Verifica se esse intervalo [slotStartMs, slotEndMs) conflita com algum agendamento existente
+      const hasConflict = occupiedIntervals.some(({ start, end }) => {
+        return slotStartMs < end && slotEndMs > start;
+      });
       
       // Basic check: if today, don't show past times
-      if (!isToday || current > now) {
+      if (!hasConflict && (!isToday || current > now)) {
         slots.push(timeString);
       }
       
       current.setMinutes(current.getMinutes() + stepMin);
     }
     return slots;
-  }, [selectedDate, tenantSettings]);
+  }, [selectedDate, tenantSettings, selectedService, selectedProfessionalId, dayAppointments]);
 
   const handleCreateAppointment = async () => {
     if (!selectedService || !selectedTime) return;
