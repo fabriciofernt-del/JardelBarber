@@ -215,6 +215,21 @@ export const PublicBooking: React.FC = () => {
     }
   };
 
+  const formatSelectedDateLong = (dateStr: string) => {
+    if (!dateStr) return '';
+
+    const [year, month, day] = dateStr.split('-'); // "YYYY-MM-DD"
+
+    // Criar o Date usando ano, mês (0-based) e dia separadamente
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+
+    return date.toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long'
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center gap-4">
@@ -407,7 +422,7 @@ export const PublicBooking: React.FC = () => {
                         {selectedTime}
                       </p>
                       <p className="text-xs font-bold text-neutral-400 uppercase tracking-wide mt-1">
-                        {new Date(selectedDate).toLocaleDateString('pt-BR', {weekday: 'long', day: '2-digit', month: 'long'})}
+                        {formatSelectedDateLong(selectedDate)}
                       </p>
                     </div>
                   </div>
