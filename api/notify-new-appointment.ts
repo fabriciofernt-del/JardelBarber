@@ -2,17 +2,46 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
 export default async function handler(req: any, res: any) {
-  // Vercel API routes use this signature for standard serverless functions
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // O Supabase envia o payload no corpo da requisição
-  const { record, type, table } = req.body;
+  // DEBUG: Log completo do body pra ver formato do Supabase
+  console.log('Webhook body:', JSON.stringify(req.body, null, 2));
 
-  // Verificação básica de segurança/integridade
+  // Supabase pode mandar em estruturas diferentes, testa as mais comuns
+  let type, table, record;
+  
+  // Formato 1: direto no root
+  if (req.body.type && req.body.table && req.body.record) {
+    ({ type, table, record } = req.body);
+  }
+  // Formato 2: dentro de "payload" ou "event"
+  else if (req.body.payload && req.body.payload.type) {
+    ({ type, table, record } = req.body.payload);
+  }
+  else if (req.body.event && req.body.event.type) {
+    ({ type, table, record } = req.body.event);
+  }
+  // Formato 3: só record (alguns setups antigos)
+  else if (req.body.record) {
+    type = 'INSERT';
+    table = 'appointments';
+    record = req.body.record;
+  }
+  else {
+    return res.status(400).json({ 
+      error: 'Invalid webhook payload', 
+      received: req.body 
+    });
+  }
+
+  // Verificação básica
   if (type !== 'INSERT' || table !== 'appointments' || !record) {
-    return res.status(400).json({ error: 'Invalid webhook payload' });
+    return res.status(400).json({ 
+      error: 'Invalid webhook payload', 
+      type, table, record 
+    });
   }
 
   const {
@@ -34,19 +63,16 @@ export default async function handler(req: any, res: any) {
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  // Inicializa clientes
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const resend = new Resend(resendApiKey);
 
   try {
-    // Busca nome do serviço
     const { data: serviceData } = await supabase
       .from('services')
       .select('name')
       .eq('id', service_id)
       .single();
 
-    // Busca nome do profissional
     const { data: professionalData } = await supabase
       .from('professionals')
       .select('name')
@@ -56,7 +82,6 @@ export default async function handler(req: any, res: any) {
     const serviceName = serviceData?.name || 'Serviço não encontrado';
     const professionalName = professionalData?.name || 'Profissional não encontrado';
 
-    // Formata a data (YYYY-MM-DDTHH:MM:SS -> DD/MM/YYYY HH:MM)
     const date = new Date(start_time);
     const formattedDate = date.toLocaleString('pt-BR', {
       timeZone: 'America/Sao_Paulo',
@@ -67,7 +92,6 @@ export default async function handler(req: any, res: any) {
       minute: '2-digit'
     });
 
-    // Monta o corpo do e-mail
     const emailText = `
 Novo agendamento recebido:
 
@@ -78,8 +102,6 @@ Profissional: ${professionalName}
 Data/Hora: ${formattedDate}
     `.trim();
 
-    // Envia o e-mail via Resend
-    // Nota: Se você não tiver um domínio verificado no Resend, use 'onboarding@resend.dev' como remetente
     const { error: resendError } = await resend.emails.send({
       from: 'Jardel Barber <onboarding@resend.dev>',
       to: emailDestino,
