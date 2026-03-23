@@ -53,23 +53,18 @@ export default async function handler(req: any, res: any) {
       });
     }
 
+    // Desestruturando para facilitar o uso no template do usuário
+    const { client_name, service, date, time } = appointment;
+
     const { data, error } = await resend.emails.send({
-      // ATENÇÃO: Substitua "agendamentos@seudominio.com.br" pelo e-mail do seu domínio verificado no Resend!
-      // Se você ainda não verificou um domínio, o Resend vai bloquear o envio.
-      from: 'Jardel Barber <agendamentos@seudominio.com.br>', 
+      from: 'Jardel Barber <onboarding@resend.dev>',
       to: ['jardeldssbarbeiro@gmail.com'],
-      subject: `✂️ Novo Agendamento: ${appointment.client_name}`,
+      subject: `🗾 Novo Agendamento: ${client_name}`,
       html: `
-        <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #f59e0b;">Novo Agendamento Confirmado!</h1>
-          <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
-            <p><strong>👤 Cliente:</strong> ${appointment.client_name}</p>
-            <p><strong>📱 Telefone:</strong> ${appointment.client_phone || 'Não informado'}</p>
-            <p><strong>💈 Serviço:</strong> ${appointment.service}</p>
-            <p><strong>👨‍🔧 Profissional:</strong> ${appointment.barber_name}</p>
-            <p><strong>📅 Data:</strong> ${appointment.date} às ${appointment.time}</p>
-          </div>
-        </div>
+        <h1>🎫 Novo Agendamento</h1>
+        <p><strong>Cliente:</strong> ${client_name}</p>
+        <p><strong>Serviço:</strong> ${service}</p>
+        <p><strong>Data:</strong> ${date} às ${time}</p>
       `,
     });
 
