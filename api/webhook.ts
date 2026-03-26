@@ -10,7 +10,9 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    // 1. Ler o JSON do body
+    // Tenta pegar os dados do corpo da requisição (suporta payload direto ou record do Supabase)
+    const data = req.body.record || req.body;
+    
     const { 
       client_name, 
       client_phone, 
@@ -18,17 +20,18 @@ export default async function handler(req: any, res: any) {
       date, 
       time, 
       barber_name 
-    } = req.body;
+    } = data;
 
-    // 2. Validar se os campos obrigatórios existem
+    // Validar se os campos obrigatórios existem
     if (!client_name || !service || !date || !time) {
+      console.log('Dados recebidos incompletos:', req.body);
       return res.status(400).json({ 
         error: 'Dados incompletos. Certifique-se de enviar nome, serviço, data e hora.' 
       });
     }
 
-    // 3. Chamar o Resend para disparar o e-mail
-    const { data, error } = await resend.emails.send({
+    // --- 1. ENVIO DE E-MAIL (RESEND) ---
+    const emailResponse = await resend.emails.send({
       from: 'Jardel Barber <onboarding@resend.dev>',
       to: ['jardeldssbarbeiro@gmail.com'],
       subject: `🎫 Novo Agendamento: ${client_name}`,
@@ -49,16 +52,51 @@ export default async function handler(req: any, res: any) {
       `,
     });
 
-    if (error) {
-      console.error('Erro no Resend:', error);
-      return res.status(500).json({ error: 'Falha ao enviar e-mail.' });
-    }
+    // --- 2. ENVIO DE WHATSAPP (META CLOUD API) ---
+    const whatsappMessage = `✂️ *NOVO AGENDAMENTO*
 
-    // 4. Retornar sucesso
-    return res.status(200).json({ success: true, message: 'Notificação enviada!', id: data?.id });
+👤 Cliente: ${client_name}
+📱 Telefone: ${client_phone || 'Não informado'}
+💈 Serviço: ${service}
+📅 Data: ${date}
+⏰ Horário: ${time}
+🧔 Barbeiro: ${barber_name || 'Jardel'}`;
 
-  } catch (err) {
-    console.error('Erro interno:', err);
-    return res.status(500).json({ error: 'Erro interno no servidor.' });
+    const whatsappResponse = await fetch(
+      `https://graph.facebook.com/v20.0/1120552827797911/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer EAAR6lqvC3ecBRE6TvRjxFl6sTvxwAtS22ciEu5R6N7Uw1ZA5g7EcwejX1TgmXMDZAO11GjZAXfetGd8rYDxz4XBhgnqhSfkRM5BZBhgO863kci6mZAn2hOmuyZC1UrB5ZB1QfWvHvElbKtvoGDuWCXYFgcqBFOX7AFKTyGqbCs0Qs4LB0OLrq8uFpwsR8JYLHdWiRlLxDhwW4qGHTJ8GZCWZCBfbE29iZBa1ZAD9yy5OiUd8nY5N3X6zQ2gD0Pp0oRdYm7YcUFXSszwsqliWIgkzVKOXSGYYgZDZD',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: "5585999451711",
+          type: "text",
+          text: { body: whatsappMessage },
+        }),
+      }
+    );
+
+    const whatsappResult = await whatsappResponse.json();
+
+    // Log para depuração
+    console.log('Resultado E-mail:', emailResponse);
+    console.log('Resultado WhatsApp:', whatsappResult);
+
+    return res.status(200).json({ 
+      success: true, 
+      email: emailResponse.data ? 'Enviado' : 'Erro',
+      whatsapp: whatsappResult.messages ? 'Enviado' : 'Erro',
+      details: {
+        emailId: emailResponse.data?.id,
+        whatsappId: whatsappResult.messages?.[0]?.id
+      }
+    });
+
+  } catch (err: any) {
+    console.error('Erro no Webhook:', err);
+    return res.status(500).json({ error: 'Erro interno no servidor.', details: err.message });
   }
 }
