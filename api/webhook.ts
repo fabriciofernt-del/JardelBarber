@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
 // Inicializa o Resend com a chave de API das variáveis de ambiente
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -29,26 +29,39 @@ export default async function handler(req: any, res: any) {
     }
 
     // --- 1. ENVIO DE E-MAIL (RESEND) ---
-    const emailResponse = await resend.emails.send({
-      from: 'Jardel Barber <onboarding@resend.dev>',
-      to: ['jardeldssbarbeiro@gmail.com'],
-      subject: `🎫 Novo Agendamento: ${client_name}`,
-      html: `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-          <h2 style="color: #d97706;">✂️ Novo Agendamento Recebido!</h2>
-          <p>Olá Jardel, você tem um novo cliente agendado:</p>
-          <hr />
-          <p><strong>👤 Cliente:</strong> ${client_name}</p>
-          <p><strong>📱 Telefone:</strong> ${client_phone || 'Não informado'}</p>
-          <p><strong>💈 Serviço:</strong> ${service}</p>
-          <p><strong>📅 Data:</strong> ${date}</p>
-          <p><strong>⏰ Horário:</strong> ${time}</p>
-          <p><strong>🧔 Barbeiro:</strong> ${barber_name || 'Jardel'}</p>
-          <hr />
-          <p style="font-size: 12px; color: #666;">Mensagem automática do sistema de agendamentos.</p>
-        </div>
-      `,
-    });
+    let emailStatus = 'Erro';
+    let emailId = null;
+
+    try {
+      const emailResponse = await resend.emails.send({
+        from: 'Agendamentos <no-reply@barbeariadojardel.com>', // precisa ser domínio verificado
+        to: ['jardeldssbarbeiro@gmail.com'], // e-mail real do Jardel
+        subject: `🎫 Novo Agendamento: ${client_name}`,
+        html: `
+          <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #d97706;">✂️ Novo Agendamento Recebido!</h2>
+            <p>Olá Jardel, você tem um novo cliente agendado:</p>
+            <hr />
+            <p><strong>👤 Cliente:</strong> ${client_name}</p>
+            <p><strong>📱 Telefone:</strong> ${client_phone || 'Não informado'}</p>
+            <p><strong>💈 Serviço:</strong> ${service}</p>
+            <p><strong>📅 Data:</strong> ${date}</p>
+            <p><strong>⏰ Horário:</strong> ${time}</p>
+            <p><strong>🧔 Barbeiro:</strong> ${barber_name || 'Jardel'}</p>
+            <hr />
+            <p style="font-size: 12px; color: #666;">Mensagem automática do sistema de agendamentos.</p>
+          </div>
+        `,
+      });
+
+      console.log('Resultado E-mail:', emailResponse);
+      if (emailResponse?.data?.id) {
+        emailStatus = 'Enviado';
+        emailId = emailResponse.data.id;
+      }
+    } catch (emailError) {
+      console.error('Erro no envio de e-mail:', emailError);
+    }
 
     // --- 2. ENVIO DE WHATSAPP (META CLOUD API) ---
     const whatsappMessage = `✂️ *NOVO AGENDAMENTO*
@@ -79,15 +92,14 @@ export default async function handler(req: any, res: any) {
 
     const whatsappResult = await whatsappResponse.json();
 
-    console.log('Resultado E-mail:', emailResponse);
     console.log('Resultado WhatsApp:', whatsappResult);
 
     return res.status(200).json({ 
       success: true, 
-      email: emailResponse.data ? 'Enviado' : 'Erro',
+      email: emailStatus,
       whatsapp: whatsappResult.messages ? 'Enviado' : 'Erro',
       details: {
-        emailId: emailResponse.data?.id,
+        emailId,
         whatsappId: whatsappResult.messages?.[0]?.id
       }
     });
