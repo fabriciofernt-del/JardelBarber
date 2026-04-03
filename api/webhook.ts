@@ -69,7 +69,7 @@ export default async function handler(req: any, res: any) {
     let emailId = null;
     try {
       const dataEmail = await resend.emails.send({
-        from: 'Barbearia Jardel <onboarding@resend.dev>',
+        from: 'Barbearia Jardel <no-reply@barbeariadojardel.com.br>',
         to: [
           'jardeldssbarbeiro@gmail.com',
           'fabriciofer@gmail.com'
