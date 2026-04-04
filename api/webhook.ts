@@ -19,6 +19,7 @@ export default async function handler(req: any, res: any) {
     const dataAgendamento = data.data || data.date;
     const hora = data.hora || data.time;
     const barbeiro = data.barbeiro || data.barber_name;
+    const clienteEmail = data.email || data.client_email;
 
     if (!nome || !servico || !dataAgendamento || !hora) {
       console.log('Dados recebidos incompletos:', req.body);
@@ -65,7 +66,7 @@ export default async function handler(req: any, res: any) {
       console.error('Erro no envio de WhatsApp:', whatsappError);
     }
 
-    // --- 2. ENVIO DE E-MAIL (RESEND) ---
+    // --- 2. ENVIO DE E-MAIL (RESEND) PARA O BARBEIRO ---
     let emailId = null;
     try {
       const dataEmail = await resend.emails.send({
@@ -92,10 +93,31 @@ export default async function handler(req: any, res: any) {
       console.error('Erro no envio de e-mail:', emailError);
     }
 
+    // --- 3. ENVIO DE E-MAIL DE CONFIRMAÇÃO PARA O CLIENTE ---
+    let emailClienteId = null;
+    if (clienteEmail) {
+      try {
+        const dataClientEmail = await resend.emails.send({
+          from: 'Barbearia Jardel <no-reply@barbeariadojardel.com.br>',
+          to: clienteEmail,
+          subject: 'Confirmação de agendamento',
+          html: `<p>Seu horário foi confirmado para ${dataAgendamento} às ${hora}</p>`
+        });
+        
+        console.log('Email Cliente ID:', dataClientEmail.data);
+        if (dataClientEmail.data?.id) {
+          emailClienteId = dataClientEmail.data.id;
+        }
+      } catch (clientEmailError) {
+        console.error('Erro no envio de e-mail para o cliente:', clientEmailError);
+      }
+    }
+
     return res.status(200).json({ 
       success: true, 
       whatsappId,
-      emailId
+      emailId,
+      emailClienteId
     });
 
   } catch (err: any) {
