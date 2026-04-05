@@ -163,8 +163,27 @@ export const getAppointments = async (): Promise<Appointment[]> => {
 };
 
 export const createAppointment = async (appt: Partial<Appointment>) => {
-  const { error } = await supabase.from('appointments').insert([{ ...appt, tenant_id: TENANT_ID }]);
-  return { error };
+  try {
+    const response = await fetch('/api/criar-agendamento', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ...appt, tenant_id: TENANT_ID }),
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('Erro na API:', result);
+      return { error: new Error(result.error || 'Erro ao criar agendamento') };
+    }
+    
+    return { error: null, data: result.data };
+  } catch (err: any) {
+    console.error('Erro ao chamar API:', err);
+    return { error: err };
+  }
 };
 
 export const updateAppointment = async (id: number, updates: Partial<Appointment>) => {
