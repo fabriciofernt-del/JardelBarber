@@ -30,26 +30,30 @@ export default async function handler(req: any, res: any) {
     }
 
     // 2. Enviar e-mail pelo Resend
-    // Verifica se o e-mail do cliente foi enviado no payload
-    const clienteEmail = dados.email || dados.user_email || dados.client_email;
-    const dataHora = dados.data_hora || dados.start_time || '';
+    const nomeCliente = dados.user_name || dados.nome || dados.client_name || 'Cliente';
+    const servico = dados.service_id || 'Serviço não especificado';
+    const dataAgendamento = dados.start_time ? dados.start_time.split('T')[0] : '';
+    const horario = dados.start_time ? dados.start_time.split('T')[1].substring(0, 5) : '';
 
-    if (clienteEmail) {
-      await resend.emails.send({
-        from: 'Barbearia Jardel <no-reply@barbeariadojardel.com.br>',
-        to: clienteEmail,
-        subject: 'Confirmação de agendamento',
-        html: `<p>Seu horário foi confirmado para ${dataHora}</p>`
-      });
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: 'Barbearia do Jardel <notificacoes@barbeariadojardel.com.br>',
+      to: ['jardeldssbarbeiro@gmail.com'],
+      subject: `Novo agendamento - ${nomeCliente}`,
+      html: `
+        <h2>Novo agendamento</h2>
+        <p><strong>Cliente:</strong> ${nomeCliente}</p>
+        <p><strong>Serviço:</strong> ${servico}</p>
+        <p><strong>Data:</strong> ${dataAgendamento}</p>
+        <p><strong>Horário:</strong> ${horario}</p>
+      `
+    });
+
+    if (emailError) {
+      console.error('Erro ao enviar email com Resend:', emailError);
+      throw emailError;
     }
 
-    // (Opcional) Enviar notificação para o barbeiro também, se desejar
-    await resend.emails.send({
-      from: 'Barbearia Jardel <no-reply@barbeariadojardel.com.br>',
-      to: ['jardeldssbarbeiro@gmail.com', 'fabriciofer@gmail.com'],
-      subject: `🗓️ Novo agendamento recebido`,
-      html: `<p>Novo agendamento salvo no sistema.</p>`
-    });
+    console.log('Email enviado com sucesso:', emailData);
 
     return res.status(200).json({ success: true, data });
 

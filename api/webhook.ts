@@ -67,57 +67,30 @@ export default async function handler(req: any, res: any) {
     }
 
     // --- 2. ENVIO DE E-MAIL (RESEND) PARA O BARBEIRO ---
-    let emailId = null;
-    try {
-      const dataEmail = await resend.emails.send({
-        from: 'Barbearia Jardel <no-reply@barbeariadojardel.com.br>',
-        to: [
-          'jardeldssbarbeiro@gmail.com',
-          'fabriciofer@gmail.com'
-        ],
-        subject: `🗓️ Novo agendamento: ${nome}`,
-        html: `
-          <h2>Novo agendamento!</h2>
-          <p>Cliente: ${nome}</p>
-          <p>Serviço: ${servico}</p>
-          <p>Data: ${dataAgendamento} ${hora}</p>
-          <hr><small>App Jardel</small>
-        `,
-      });
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: 'Barbearia do Jardel <notificacoes@barbeariadojardel.com.br>',
+      to: ['jardeldssbarbeiro@gmail.com'],
+      subject: `Novo agendamento - ${nome}`,
+      html: `
+        <h2>Novo agendamento</h2>
+        <p><strong>Cliente:</strong> ${nome}</p>
+        <p><strong>Serviço:</strong> ${servico}</p>
+        <p><strong>Data:</strong> ${dataAgendamento}</p>
+        <p><strong>Horário:</strong> ${hora}</p>
+      `
+    });
 
-      console.log('Email ID:', dataEmail.data);
-      if (dataEmail.data?.id) {
-        emailId = dataEmail.data.id;
-      }
-    } catch (emailError) {
-      console.error('Erro no envio de e-mail:', emailError);
+    if (emailError) {
+      console.error('Erro ao enviar email com Resend:', emailError);
+      throw emailError;
     }
 
-    // --- 3. ENVIO DE E-MAIL DE CONFIRMAÇÃO PARA O CLIENTE ---
-    let emailClienteId = null;
-    if (clienteEmail) {
-      try {
-        const dataClientEmail = await resend.emails.send({
-          from: 'Barbearia Jardel <no-reply@barbeariadojardel.com.br>',
-          to: clienteEmail,
-          subject: 'Confirmação de agendamento',
-          html: `<p>Seu horário foi confirmado para ${dataAgendamento} às ${hora}</p>`
-        });
-        
-        console.log('Email Cliente ID:', dataClientEmail.data);
-        if (dataClientEmail.data?.id) {
-          emailClienteId = dataClientEmail.data.id;
-        }
-      } catch (clientEmailError) {
-        console.error('Erro no envio de e-mail para o cliente:', clientEmailError);
-      }
-    }
+    console.log('Email enviado com sucesso:', emailData);
 
     return res.status(200).json({ 
       success: true, 
       whatsappId,
-      emailId,
-      emailClienteId
+      emailId: emailData?.id
     });
 
   } catch (err: any) {
