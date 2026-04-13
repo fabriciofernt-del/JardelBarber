@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   DollarSign, 
   Plus, 
@@ -21,11 +21,12 @@ import {
   ChevronRight,
   Download
 } from 'lucide-react';
-import { MOCK_REVENUE } from '../constants';
+import { getRevenue, createRevenue, deleteRevenue } from '../constants';
 import { RevenueEntry } from '../types';
 
 export const Revenue: React.FC = () => {
-  const [entries, setEntries] = useState<RevenueEntry[]>(MOCK_REVENUE);
+  const [entries, setEntries] = useState<RevenueEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [filter, setFilter] = useState<'dia' | 'semana' | 'mes' | 'extrato'>('dia');
   
@@ -39,6 +40,22 @@ export const Revenue: React.FC = () => {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<'servico' | 'produto' | 'outro'>('servico');
   const [method, setMethod] = useState<'dinheiro' | 'pix' | 'cartao'>('dinheiro');
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const data = await getRevenue();
+      setEntries(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const stats = useMemo(() => {
     const todayStr = now.toISOString().split('T')[0];
@@ -104,12 +121,11 @@ export const Revenue: React.FC = () => {
     setViewYear(nextYear);
   };
 
-  const handleAddEntry = (e: React.FormEvent) => {
+  const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description || !amount) return;
 
-    const newEntry: RevenueEntry = {
-      id: Date.now(),
+    const newEntry = {
       date: new Date().toISOString(),
       description,
       category,
@@ -117,17 +133,36 @@ export const Revenue: React.FC = () => {
       payment_method: method
     };
 
-    setEntries([newEntry, ...entries]);
+    const { error } = await createRevenue(newEntry);
+    if (error) {
+      alert('Erro ao salvar lançamento.');
+      return;
+    }
+
+    await loadData();
     setShowAddModal(false);
     setDescription('');
     setAmount('');
   };
 
-  const removeEntry = (id: number) => {
+  const removeEntry = async (id: number) => {
     if (confirm('Deseja excluir este registro?')) {
-      setEntries(entries.filter(e => e.id !== id));
+      const { error } = await deleteRevenue(id);
+      if (error) {
+        alert('Erro ao excluir lançamento.');
+        return;
+      }
+      await loadData();
     }
   };
+
+  if (loading && entries.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
