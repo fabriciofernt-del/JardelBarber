@@ -45,7 +45,15 @@ export const PublicBooking: React.FC = () => {
   const [step, setStep] = useState<BookingStep>('service');
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<number | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const getNextAvailableDate = () => {
+    const d = new Date();
+    while (d.getDay() === 0 || d.getDay() === 1) {
+      d.setDate(d.getDate() + 1);
+    }
+    return d.toISOString().split('T')[0];
+  };
+
+  const [selectedDate, setSelectedDate] = useState<string>(getNextAvailableDate());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   
   const [clientName, setClientName] = useState('');
@@ -108,6 +116,13 @@ export const PublicBooking: React.FC = () => {
   const availableSlots = useMemo(() => {
     const slots: string[] = [];
     if (!tenantSettings.work_start || !selectedService || !selectedProfessionalId) return slots;
+
+    // Check if selected date is Sunday (0) or Monday (1)
+    const selectedDateObj = new Date(selectedDate + 'T12:00:00');
+    const dayOfWeek = selectedDateObj.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 1) {
+      return slots; // Return empty slots for closed days
+    }
 
     const [startHour, startMin] = tenantSettings.work_start.split(':').map(Number);
     const [endHour, endMin] = tenantSettings.work_end.split(':').map(Number);
@@ -372,6 +387,7 @@ export const PublicBooking: React.FC = () => {
                   <div className="relative overflow-hidden rounded-[2.5rem] bg-neutral-900/50 border border-neutral-800 p-2">
                     <input 
                       type="date" 
+                      min={new Date().toISOString().split('T')[0]}
                       className="w-full bg-transparent p-6 rounded-[2rem] text-white font-black text-center text-xl outline-none hover:bg-neutral-800/50 transition-all cursor-pointer italic appearance-none" 
                       value={selectedDate} 
                       onChange={e => setSelectedDate(e.target.value)} 
@@ -398,7 +414,13 @@ export const PublicBooking: React.FC = () => {
                        ))
                      ) : (
                        <div className="col-span-full py-12 text-center bg-neutral-900/30 rounded-3xl border border-dashed border-neutral-800">
-                         <p className="text-[10px] font-black text-neutral-600 uppercase tracking-widest italic">Agenda lotada para este dia</p>
+                         <p className="text-[10px] font-black text-neutral-600 uppercase tracking-widest italic">
+                           {(() => {
+                             const d = new Date(selectedDate + 'T12:00:00');
+                             if (d.getDay() === 0 || d.getDay() === 1) return "Fechado aos Domingos e Segundas";
+                             return "Agenda lotada para este dia";
+                           })()}
+                         </p>
                        </div>
                      )}
                   </div>
