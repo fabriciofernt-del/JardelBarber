@@ -77,17 +77,26 @@ export const Dashboard: React.FC = () => {
 
   const stats = useMemo(() => {
     const totalAppts = appointments.length;
-    const totalRevenue = appointments.reduce((sum, appt) => {
-      // Only count confirmed or completed, or maybe all for projection? 
-      // Let's count all non-cancelled for now as "projected/actual"
+    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const monthlyRevenue = appointments.reduce((sum, appt) => {
       if (appt.status === 'cancelado') return sum;
-      const service = services.find(s => s.id === appt.service_id);
-      return sum + (service?.price || 0);
+      
+      const apptDate = new Date(appt.start_time);
+      if (apptDate.getMonth() === currentMonth && apptDate.getFullYear() === currentYear) {
+        const service = services.find(s => s.id === appt.service_id);
+        return sum + (service?.price || 0);
+      }
+      return sum;
     }, 0);
+
     const uniqueClients = new Set(appointments.map(a => a.user_name)).size;
     const maxCapacity = (professionals.length || 1) * 10 * 7; 
     const occupancyRate = maxCapacity > 0 ? Math.min(Math.round((totalAppts / maxCapacity) * 100), 100) : 0;
-    return { totalAppts, totalRevenue, uniqueClients, occupancyRate };
+    return { totalAppts, monthlyRevenue, uniqueClients, occupancyRate };
   }, [appointments, services, professionals]);
 
   const chartData = useMemo(() => {
@@ -111,7 +120,7 @@ export const Dashboard: React.FC = () => {
     <div className="space-y-6 animate-in fade-in duration-700 pb-10">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard title="Agenda" value={stats.totalAppts.toString()} trend="Ativo" icon={Calendar} colorClass="bg-neutral-950 text-amber-500" valueColorClass="text-amber-600" />
-        <StatCard title="Faturamento Est." value={`R$ ${stats.totalRevenue.toFixed(0)}`} trend="Total" icon={DollarSign} colorClass="bg-amber-500 text-neutral-950" />
+        <StatCard title="Faturamento do Mês" value={`R$ ${stats.monthlyRevenue.toFixed(0)}`} trend="Mês Atual" icon={DollarSign} colorClass="bg-amber-500 text-neutral-950" />
         <StatCard title="Clientes Únicos" value={stats.uniqueClients.toString()} trend="Base" icon={Users} colorClass="bg-neutral-900 text-amber-400" />
         <StatCard title="Ocupação" value={`${stats.occupancyRate}%`} trend="Fluxo" icon={TrendingUp} colorClass="bg-amber-100 text-amber-600" />
       </div>
