@@ -21,11 +21,13 @@ import {
   ChevronRight,
   Download
 } from 'lucide-react';
-import { getRevenue, createRevenue, deleteRevenue } from '../constants';
-import { RevenueEntry } from '../types';
+import { getRevenue, createRevenue, deleteRevenue, getAppointments, getServices } from '../constants';
+import { RevenueEntry, Appointment, Service } from '../types';
 
 export const Revenue: React.FC = () => {
   const [entries, setEntries] = useState<RevenueEntry[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [filter, setFilter] = useState<'dia' | 'semana' | 'mes' | 'extrato'>('dia');
@@ -44,8 +46,14 @@ export const Revenue: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await getRevenue();
-      setEntries(data);
+      const [revData, apptData, servData] = await Promise.all([
+        getRevenue(),
+        getAppointments(),
+        getServices()
+      ]);
+      setEntries(revData);
+      setAppointments(apptData);
+      setServices(servData);
     } catch (e) {
       console.error(e);
     } finally {
@@ -59,26 +67,57 @@ export const Revenue: React.FC = () => {
 
   const stats = useMemo(() => {
     const todayStr = now.toISOString().split('T')[0];
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Helper to get price of a service
+    const getServicePrice = (id: number) => services.find(s => s.id === id)?.price || 0;
+
+    // --- TODAY STATS ---
+    const appointmentsToday = appointments
+      .filter(appt => appt.start_time.startsWith(todayStr) && appt.status !== 'cancelado')
+      .reduce((sum, appt) => sum + getServicePrice(appt.service_id), 0);
     
-    const today = entries
+    const entriesToday = entries
       .filter(e => e.date.startsWith(todayStr))
       .reduce((sum, e) => sum + e.amount, 0);
 
+    const today = appointmentsToday + entriesToday;
+
+    // --- WEEKLY STATS ---
     const weekStart = new Date(now);
     weekStart.setHours(0, 0, 0, 0);
     weekStart.setDate(now.getDate() - now.getDay());
     
-    const weekly = entries
+    const appointmentsWeekly = appointments
+      .filter(appt => new Date(appt.start_time) >= weekStart && appt.status !== 'cancelado')
+      .reduce((sum, appt) => sum + getServicePrice(appt.service_id), 0);
+
+    const entriesWeekly = entries
       .filter(e => new Date(e.date) >= weekStart)
       .reduce((sum, e) => sum + e.amount, 0);
 
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthly = entries
-      .filter(e => new Date(e.date) >= monthStart)
+    const weekly = appointmentsWeekly + entriesWeekly;
+
+    // --- MONTHLY STATS ---
+    const appointmentsMonthly = appointments
+      .filter(appt => {
+        const d = new Date(appt.start_time);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && appt.status !== 'cancelado';
+      })
+      .reduce((sum, appt) => sum + getServicePrice(appt.service_id), 0);
+
+    const entriesMonthly = entries
+      .filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      })
       .reduce((sum, e) => sum + e.amount, 0);
 
+    const monthly = appointmentsMonthly + entriesMonthly;
+
     return { today, weekly, monthly };
-  }, [entries]);
+  }, [entries, appointments, services]);
 
   const filteredEntries = useMemo(() => {
     if (filter === 'dia') {
