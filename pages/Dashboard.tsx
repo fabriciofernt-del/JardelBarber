@@ -59,14 +59,14 @@ export const Dashboard: React.FC = () => {
         getAppointments(),
         getServices(),
         getProfessionals(),
-        getRevenue()
+        getRevenue().catch(() => [])
       ]);
-      setAppointments(appts);
-      setServices(servs);
-      setProfessionals(pros);
-      setRevenueEntries(revs);
+      setAppointments(appts || []);
+      setServices(servs || []);
+      setProfessionals(pros || []);
+      setRevenueEntries(revs || []);
     } catch (e) {
-      console.error(e);
+      console.error('Error in Dashboard fetch:', e);
     } finally {
       setLoading(false);
     }

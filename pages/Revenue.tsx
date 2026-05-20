@@ -47,15 +47,15 @@ export const Revenue: React.FC = () => {
     setLoading(true);
     try {
       const [revData, apptData, servData] = await Promise.all([
-        getRevenue(),
-        getAppointments(),
-        getServices()
+        getRevenue().catch(() => []),
+        getAppointments().catch(() => []),
+        getServices().catch(() => [])
       ]);
-      setEntries(revData);
-      setAppointments(apptData);
-      setServices(servData);
+      setEntries(revData || []);
+      setAppointments(apptData || []);
+      setServices(servData || []);
     } catch (e) {
-      console.error(e);
+      console.error('Error loading revenue data:', e);
     } finally {
       setLoading(false);
     }
@@ -174,7 +174,8 @@ export const Revenue: React.FC = () => {
 
     const { error } = await createRevenue(newEntry);
     if (error) {
-      alert('Erro ao salvar lançamento.');
+      console.error('Error saving entry:', error);
+      alert(`Erro ao salvar lançamento: ${error.message || 'Erro desconhecido'}`);
       return;
     }
 
