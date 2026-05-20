@@ -100,7 +100,7 @@ export const Professionals: React.FC = () => {
               <div className="relative">
                 <div className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center text-3xl font-black italic ring-8 ring-offset-4 transition-all duration-500 overflow-hidden ${pro.active ? 'bg-neutral-950 text-amber-500 ring-amber-500/5 ring-offset-white group-hover:rotate-6' : 'bg-slate-100 text-slate-400 ring-slate-50'}`}>
                   <ImageFallback 
-                    src={pro.avatar_url || ''} 
+                    src={pro.avatar_url || undefined} 
                     alt={pro.name} 
                     className="w-full h-full object-cover" 
                   />

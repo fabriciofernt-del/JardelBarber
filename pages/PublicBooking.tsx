@@ -384,11 +384,11 @@ export const PublicBooking: React.FC = () => {
                     <span className="text-[9px] font-black text-amber-500 uppercase tracking-[0.3em] whitespace-nowrap italic">Escolha o Dia</span>
                   </div>
                   
-                  <div className="relative overflow-hidden rounded-[2.5rem] bg-neutral-900/50 border border-neutral-800 p-2">
+                  <div className="relative overflow-hidden rounded-[2.5rem] bg-neutral-900 border border-amber-500/20 p-2">
                     <input 
                       type="date" 
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full bg-transparent p-6 rounded-[2rem] text-white font-black text-center text-xl outline-none hover:bg-neutral-800/50 transition-all cursor-pointer italic appearance-none" 
+                      className="w-full bg-transparent p-6 rounded-[2rem] text-white font-black text-center text-xl outline-none hover:bg-amber-500/5 transition-all cursor-pointer italic appearance-none" 
                       value={selectedDate} 
                       onChange={e => setSelectedDate(e.target.value)} 
                     />

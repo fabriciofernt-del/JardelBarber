@@ -9,18 +9,22 @@ interface ImageProps {
 }
 
 export const ImageFallback = ({ src, alt, className, fallback = 'https://picsum.photos/400/300?random=1' }: ImageProps) => {
-  const [imgSrc, setImgSrc] = useState(src);
+  const [imgSrc, setImgSrc] = useState(src || fallback);
   
   useEffect(() => {
-    setImgSrc(src);
-  }, [src]);
+    setImgSrc(src || fallback);
+  }, [src, fallback]);
 
   return (
     <img
       src={imgSrc}
       alt={alt}
       className={className || 'w-full h-64 object-cover rounded-lg'}
-      onError={(e) => (e.currentTarget.src = fallback)}
+      onError={(e) => {
+        if (e.currentTarget.src !== fallback) {
+          e.currentTarget.src = fallback;
+        }
+      }}
       loading="lazy"
     />
   );

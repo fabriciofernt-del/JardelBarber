@@ -160,7 +160,7 @@ export const Services: React.FC = () => {
           <div key={service.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden group">
             <div className="aspect-[4/3] bg-neutral-950 relative overflow-hidden">
               <ImageFallback 
-                src={service.image_url || ''} 
+                src={service.image_url || undefined} 
                 alt={service.name} 
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-90 group-hover:opacity-100" 
               />
@@ -229,7 +229,7 @@ export const Services: React.FC = () => {
                     className="w-40 h-40 rounded-[2.5rem] bg-neutral-50 border-4 border-dashed border-slate-100 flex flex-col items-center justify-center text-slate-300 relative overflow-hidden group shadow-inner cursor-pointer hover:border-amber-500/50 transition-all"
                   >
                     <ImageFallback 
-                      src={imageUrl || ''} 
+                      src={imageUrl || undefined} 
                       className="w-full h-full object-cover" 
                       alt="Preview" 
                     />

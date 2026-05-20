@@ -114,7 +114,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <div className="pt-6 border-t border-neutral-900">
             <div className="flex items-center gap-3 px-2 mb-6 text-left">
               <div className="w-10 h-10 rounded-xl border-2 border-neutral-800 overflow-hidden bg-neutral-900 shrink-0">
-                <ImageFallback src={tenant.logo_url || ''} alt="Logo" className="w-full h-full object-cover" />
+                <ImageFallback src={tenant.logo_url || undefined} alt="Logo" className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-black text-white truncate italic uppercase tracking-tighter">Admin Master</span>
@@ -154,7 +154,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <header className="hidden lg:flex justify-between items-center mb-10">
             <div className="flex items-center gap-6">
               <ImageFallback 
-                src={tenant.logo_url || ''} 
+                src={tenant.logo_url || undefined} 
                 alt={`${tenant.name} logo`} 
                 className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-xl" 
               />

@@ -201,6 +201,7 @@ export const getRevenue = async (): Promise<RevenueEntry[]> => {
   const { data, error } = await supabase
     .from('revenue')
     .select('*')
+    .eq('tenant_id', TENANT_ID)
     .order('date', { ascending: false });
     
   if (error) {
@@ -211,7 +212,7 @@ export const getRevenue = async (): Promise<RevenueEntry[]> => {
 };
 
 export const createRevenue = async (entry: Partial<RevenueEntry>) => {
-  const { error } = await supabase.from('revenue').insert([entry]);
+  const { error } = await supabase.from('revenue').insert([{ ...entry, tenant_id: TENANT_ID }]);
   return { error };
 };
 

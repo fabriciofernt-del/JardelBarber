@@ -53,6 +53,7 @@ export interface Service {
 
 export interface RevenueEntry {
   id: number;
+  tenant_id: number;
   date: string;
   description: string;
   category: 'servico' | 'produto' | 'outro';

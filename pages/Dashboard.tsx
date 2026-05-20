@@ -19,8 +19,8 @@ import {
   Clock,
   Lightbulb
 } from 'lucide-react';
-import { getAppointments, getServices, getProfessionals } from '../constants';
-import { Appointment, Service, Professional } from '../types';
+import { getAppointments, getServices, getProfessionals, getRevenue } from '../constants';
+import { Appointment, Service, Professional, RevenueEntry } from '../types';
 
 const StatCard: React.FC<{
   title: string;
@@ -48,20 +48,23 @@ export const Dashboard: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [revenueEntries, setRevenueEntries] = useState<RevenueEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [chartReady, setChartReady] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [appts, servs, pros] = await Promise.all([
+      const [appts, servs, pros, revs] = await Promise.all([
         getAppointments(),
         getServices(),
-        getProfessionals()
+        getProfessionals(),
+        getRevenue()
       ]);
       setAppointments(appts);
       setServices(servs);
       setProfessionals(pros);
+      setRevenueEntries(revs);
     } catch (e) {
       console.error(e);
     } finally {
@@ -86,7 +89,7 @@ export const Dashboard: React.FC = () => {
       return apptDate.getMonth() === currentMonth && apptDate.getFullYear() === currentYear;
     }).length;
 
-    const monthlyRevenue = appointments.reduce((sum, appt) => {
+    const apptRevenue = appointments.reduce((sum, appt) => {
       if (appt.status === 'cancelado') return sum;
       
       const apptDate = new Date(appt.start_time);
@@ -96,6 +99,16 @@ export const Dashboard: React.FC = () => {
       }
       return sum;
     }, 0);
+
+    const manualRevenue = revenueEntries.reduce((sum, entry) => {
+      const entryDate = new Date(entry.date);
+      if (entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
+        return sum + entry.amount;
+      }
+      return sum;
+    }, 0);
+
+    const monthlyRevenue = apptRevenue + manualRevenue;
 
     const totalApptsForOccupancy = appointments.length;
     const uniqueClients = new Set(appointments.map(a => a.user_name)).size;
