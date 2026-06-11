@@ -489,7 +489,7 @@ export const PublicBooking: React.FC = () => {
             )}
 
             {step === 'payment' && (
-              <div className="space-y-8 text-center animate-in zoom-in-95 duration-500">
+              <div className="space-y-6 text-center animate-in zoom-in-95 duration-500">
                 <div className="bg-neutral-900 p-10 rounded-[3rem] border border-neutral-800 flex flex-col items-center relative shadow-2xl">
                    <div className="absolute -top-4 px-8 py-2 bg-amber-500 text-black rounded-full shadow-lg shadow-amber-500/20">
                      <span className="text-[11px] font-black uppercase tracking-widest italic">Pagamento Instantâneo</span>
@@ -505,6 +505,20 @@ export const PublicBooking: React.FC = () => {
                    >
                      <Copy size={16} className="group-hover:scale-110 transition-transform"/> Copiar Código PIX
                    </button>
+                </div>
+
+                {/* AVISO IMPORTANTE SOBRE AGENDAMENTO E PAGAMENTO */}
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-[2rem] p-6 text-left space-y-2 backdrop-blur-md">
+                  <p className="text-amber-500 text-[10px] font-black uppercase tracking-[0.2em] italic">
+                    ⚠️ Aviso Importante
+                  </p>
+                  <p className="text-xs font-bold text-neutral-300 leading-relaxed uppercase">
+                    O pagamento antecipado é <span className="text-amber-500 font-black">opcional</span>! Se preferir, você pode realizar o pagamento diretamente <span className="text-white font-black">na hora do atendimento</span>.
+                  </p>
+                  <div className="h-px bg-neutral-800/80 my-2"></div>
+                  <p className="text-[10px] font-black text-amber-400 leading-normal uppercase tracking-wider">
+                    ATENÇÃO: Você <span className="text-white underline font-black">DEVE</span> clicar no botão <span className="text-white font-black">"CONFIRMAR AGENDAMENTO"</span> abaixo para concluir e salvar seu horário. Apenas realizar a transferência PIX sem clicar no botão não gera o agendamento!
+                  </p>
                 </div>
                 
                 <button 
