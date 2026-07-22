@@ -741,14 +741,15 @@ export const PublicBooking: React.FC = () => {
                       className="w-full py-4 bg-amber-500 text-black font-black rounded-2xl uppercase italic tracking-widest text-xs hover:bg-amber-400 active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2"
                     >
                       {searching ? (
-                        <>
+                        <div className="flex items-center gap-2">
                           <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
-                          Buscando...
-                        </>
+                          <span>Buscando...</span>
+                        </div>
                       ) : (
-                        <>
-                          <Search size={16} /> Buscar Agendamentos
-                        </>
+                        <div className="flex items-center gap-2">
+                          <Search size={16} />
+                          <span>Buscar Agendamentos</span>
+                        </div>
                       )}
                     </button>
                   </form>
@@ -757,7 +758,7 @@ export const PublicBooking: React.FC = () => {
                 {actionFeedback && (
                   <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-400 text-xs font-black uppercase tracking-wider text-center flex items-center justify-center gap-2 animate-in fade-in">
                     <CheckCircle2 size={16} />
-                    {actionFeedback}
+                    <span>{actionFeedback}</span>
                   </div>
                 )}
 
@@ -799,7 +800,8 @@ export const PublicBooking: React.FC = () => {
                                     {service ? service.name : 'Atendimento Barber'}
                                   </h4>
                                   <p className="text-xs font-bold text-neutral-400 mt-1 flex items-center gap-1.5">
-                                    <User size={13} className="text-amber-500" /> Profissional: {pro ? pro.name : 'Atendente'}
+                                    <User size={13} className="text-amber-500" />
+                                    <span>Profissional: {pro ? pro.name : 'Atendente'}</span>
                                   </p>
                                 </div>
 
@@ -845,14 +847,16 @@ export const PublicBooking: React.FC = () => {
                                       {actionLoadingId === appt.id ? (
                                         <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
                                       ) : (
-                                        <>
-                                          <CheckCircle2 size={16} /> {appt.status === 'cancelado' ? 'Reativar / Confirmar' : 'Confirmar Presença'}
-                                        </>
+                                        <div className="flex items-center justify-center gap-2">
+                                          <CheckCircle2 size={16} />
+                                          <span>{appt.status === 'cancelado' ? 'Reativar / Confirmar' : 'Confirmar Presença'}</span>
+                                        </div>
                                       )}
                                     </button>
                                   ) : (
                                     <div className="flex-1 py-3 px-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-[11px] uppercase tracking-wider italic rounded-2xl flex items-center justify-center gap-2">
-                                      <CheckCircle2 size={16} /> Presença Confirmada
+                                      <CheckCircle2 size={16} />
+                                      <span>Presença Confirmada</span>
                                     </div>
                                   )}
 
@@ -865,9 +869,10 @@ export const PublicBooking: React.FC = () => {
                                       {actionLoadingId === appt.id ? (
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                       ) : (
-                                        <>
-                                          <XCircle size={16} /> Desmarcar / Cancelar
-                                        </>
+                                        <div className="flex items-center justify-center gap-2">
+                                          <XCircle size={16} />
+                                          <span>Desmarcar / Cancelar</span>
+                                        </div>
                                       )}
                                     </button>
                                   )}
