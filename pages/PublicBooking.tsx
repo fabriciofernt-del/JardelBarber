@@ -806,6 +806,7 @@ export const PublicBooking: React.FC = () => {
                                 </div>
 
                                 <span
+                                  key={appt.status}
                                   className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0 ${
                                     appt.status === 'confirmado'
                                       ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
@@ -816,10 +817,7 @@ export const PublicBooking: React.FC = () => {
                                       : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                                   }`}
                                 >
-                                  {appt.status === 'confirmado' && 'Confirmado'}
-                                  {appt.status === 'pendente' && 'Pendente'}
-                                  {appt.status === 'concluido' && 'Concluído'}
-                                  {appt.status === 'cancelado' && 'Cancelado'}
+                                  {appt.status === 'confirmado' ? 'Confirmado' : appt.status === 'pendente' ? 'Pendente' : appt.status === 'concluido' ? 'Concluído' : 'Cancelado'}
                                 </span>
                               </div>
 
