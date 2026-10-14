@@ -16,7 +16,10 @@ import {
   Search,
   XCircle,
   User,
-  AlertCircle
+  AlertCircle,
+  Sparkles,
+  Crown,
+  Check
 } from 'lucide-react';
 import { 
   getTenant, 
@@ -84,29 +87,58 @@ export const PublicBooking: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    let mounted = true;
+
+    // Safety fallback: guaranteed to stop loading spinner within 2 seconds
+    const safetyTimer = setTimeout(() => {
+      if (mounted) {
+        setLoading(false);
+      }
+    }, 2000);
+
     const fetchData = async () => {
       try {
         const [t, s, servs, pros] = await Promise.all([
-          getTenant(),
-          getSettings(),
-          getServices(),
-          getProfessionals()
+          getTenant().catch(() => DEFAULT_TENANT),
+          getSettings().catch(() => DEFAULT_SETTINGS),
+          getServices().catch(() => []),
+          getProfessionals().catch(() => [])
         ]);
         
-        setTenant(t);
-        setTenantSettings(s);
-        setAvailableServices(servs);
-        setAvailableProfessionals(pros);
+        if (mounted) {
+          if (t) setTenant(t);
+          if (s) setTenantSettings(s);
+          if (servs) setAvailableServices(servs);
+          if (pros) setAvailableProfessionals(pros);
+        }
 
-        const { data: { session } } = await (supabase.auth as any).getSession();
-        setIsAdmin(!!session || !!localStorage.getItem('jb_admin_session'));
+        try {
+          const sessionPromise = (supabase.auth as any).getSession();
+          const timeoutAuth = new Promise(r => setTimeout(() => r(null), 1000));
+          const res: any = await Promise.race([sessionPromise, timeoutAuth]);
+          if (mounted && res?.data) {
+            setIsAdmin(!!res.data.session || !!localStorage.getItem('jb_admin_session'));
+          } else if (mounted) {
+            setIsAdmin(!!localStorage.getItem('jb_admin_session'));
+          }
+        } catch (e) {
+          if (mounted) setIsAdmin(!!localStorage.getItem('jb_admin_session'));
+        }
       } catch (err) {
-        console.error(err);
+        console.error('fetchData error:', err);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
+
     fetchData();
+
+    return () => {
+      mounted = false;
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -132,6 +164,43 @@ export const PublicBooking: React.FC = () => {
   }, [selectedDate, selectedProfessionalId]);
 
   const selectedService = useMemo(() => availableServices.find(s => s.id === selectedServiceId), [availableServices, selectedServiceId]);
+
+  const isMonthlyPackage = (name?: string) => {
+    if (!name) return false;
+    const n = name.toLowerCase();
+    return n.includes('4 cortes') || n.includes('pacote mensal');
+  };
+
+  const package4Cortes = useMemo(() => {
+    return availableServices.find(s => s.name.toLowerCase().includes('4 cortes') && !s.name.toLowerCase().includes('barba')) || {
+      id: 991,
+      tenant_id: 1,
+      name: 'Pacote Mensal - 4 Cortes',
+      duration_min: 40,
+      price: 100.00,
+      active: true,
+      image_url: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&q=80&w=600'
+    };
+  }, [availableServices]);
+
+  const package4CortesBarba = useMemo(() => {
+    return availableServices.find(s => s.name.toLowerCase().includes('4 cortes') && s.name.toLowerCase().includes('barba')) || {
+      id: 992,
+      tenant_id: 1,
+      name: 'Pacote Mensal - 4 Cortes + Barba',
+      duration_min: 55,
+      price: 150.00,
+      active: true,
+      image_url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=600'
+    };
+  }, [availableServices]);
+
+  const regularServices = useMemo(() => {
+    const list = availableServices.filter(s => !isMonthlyPackage(s.name));
+    return list.length > 0 ? list : availableServices;
+  }, [availableServices]);
+
+
 
   const availableSlots = useMemo(() => {
     const slots: string[] = [];
@@ -465,19 +534,165 @@ export const PublicBooking: React.FC = () => {
 
         <div className="space-y-6">
             {step === 'service' && (
-              <div className="space-y-4 animate-in slide-in-from-bottom-8 duration-700">
-                <div className="flex items-center gap-3 mb-4">
+              <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-700">
+                <div className="flex items-center gap-3 mb-2">
                    <div className="bg-amber-500 p-1.5 rounded-lg shadow-lg shadow-amber-500/20 rotate-3">
                      <Scissors size={18} className="text-neutral-950" />
                    </div>
-                   <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">Escolha o seu Estilo</h2>
+                   <div>
+                     <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">Escolha o seu Estilo</h2>
+                     <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Planos mensais e cortes avulsos</p>
+                   </div>
                 </div>
-                
-                {availableServices.length === 0 && (
-                   <p className="text-neutral-500 italic">Nenhum serviço disponível no momento.</p>
+
+                {/* DESTAQUE DE PACOTES MENSAIS (4 Cortes R$100 / 4 Cortes + Barba R$150) */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-500 flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-amber-400" /> Pacotes Mensais de Cortes
+                    </span>
+                    <span className="text-[9px] font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2.5 py-1 rounded-full">
+                      Economize até 50%
+                    </span>
+                  </div>
+
+                  {/* Card Pacote 1: 4 Cortes (R$ 100) */}
+                  <div className="relative overflow-hidden bg-gradient-to-br from-neutral-900/90 via-neutral-900/60 to-neutral-950/90 border border-amber-500/30 rounded-[2rem] p-5 shadow-2xl group hover:border-amber-500/60 transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <div className="relative z-10 space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[9px] font-black uppercase tracking-wider text-amber-400">
+                            <Sparkles size={11} /> Mais Popular
+                          </div>
+                          <h3 className="text-lg font-black text-white uppercase italic tracking-tight group-hover:text-amber-400 transition-colors">
+                            {package4Cortes.name}
+                          </h3>
+                          <p className="text-xs text-neutral-400 font-medium">
+                            4 cortes no mês • <span className="text-amber-400 font-bold">R$ 25 por corte</span>
+                          </p>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="flex items-baseline justify-end gap-0.5">
+                            <span className="text-xs font-black text-amber-500">R$</span>
+                            <span className="text-2xl md:text-3xl font-black text-white italic tracking-tighter">100</span>
+                            <span className="text-[10px] font-bold text-neutral-400">/mês</span>
+                          </div>
+                          <span className="text-[9px] font-bold text-neutral-500 line-through">R$ 200 avulso</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-300 font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <Check size={13} className="text-emerald-400 shrink-0" />
+                          <span>4 Cortes completos no mês</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Check size={13} className="text-emerald-400 shrink-0" />
+                          <span>Válido por 30 dias corridos</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Check size={13} className="text-emerald-400 shrink-0" />
+                          <span>Agenda flexível semanal</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Check size={13} className="text-emerald-400 shrink-0" />
+                          <span>Economia de R$ 100 no mês</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-1">
+                        <button
+                          onClick={() => {
+                            setSelectedServiceId(package4Cortes.id);
+                            setStep('professional');
+                          }}
+                          className="w-full py-4 px-6 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs sm:text-sm uppercase tracking-wider italic rounded-2xl transition-all shadow-lg shadow-amber-500/20 active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <Scissors size={16} /> Agendar com este Pacote
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Pacote 2: 4 Cortes + Barba (R$ 150) */}
+                  <div className="relative overflow-hidden bg-gradient-to-br from-neutral-900/90 via-neutral-900/60 to-neutral-950/90 border border-amber-500/30 rounded-[2rem] p-5 shadow-2xl group hover:border-amber-500/60 transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <div className="relative z-10 space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[9px] font-black uppercase tracking-wider text-amber-400">
+                            <Crown size={11} /> Combo VIP Completo
+                          </div>
+                          <h3 className="text-lg font-black text-white uppercase italic tracking-tight group-hover:text-amber-400 transition-colors">
+                            {package4CortesBarba.name}
+                          </h3>
+                          <p className="text-xs text-neutral-400 font-medium">
+                            4 cortes + 4 barbas • <span className="text-amber-400 font-bold">Visual impecável</span>
+                          </p>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="flex items-baseline justify-end gap-0.5">
+                            <span className="text-xs font-black text-amber-500">R$</span>
+                            <span className="text-2xl md:text-3xl font-black text-white italic tracking-tighter">150</span>
+                            <span className="text-[10px] font-bold text-neutral-400">/mês</span>
+                          </div>
+                          <span className="text-[9px] font-bold text-neutral-500 line-through">R$ 300 avulso</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-300 font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <Check size={13} className="text-emerald-400 shrink-0" />
+                          <span>4 Cortes + 4 Barbas completas</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Check size={13} className="text-emerald-400 shrink-0" />
+                          <span>Válido por 30 dias corridos</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Check size={13} className="text-emerald-400 shrink-0" />
+                          <span>Toalha quente & alinhamento fino</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Check size={13} className="text-emerald-400 shrink-0" />
+                          <span>Máxima economia no combo</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-1">
+                        <button
+                          onClick={() => {
+                            setSelectedServiceId(package4CortesBarba.id);
+                            setStep('professional');
+                          }}
+                          className="w-full py-4 px-6 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs sm:text-sm uppercase tracking-wider italic rounded-2xl transition-all shadow-lg shadow-amber-500/20 active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <Crown size={16} /> Agendar com este Pacote
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* DIVISOR DE SERVIÇOS AVULSOS */}
+                <div className="flex items-center gap-3 py-2">
+                  <div className="h-px flex-1 bg-neutral-800/80"></div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.25em] text-neutral-500">
+                    Ou Serviços Avulsos
+                  </span>
+                  <div className="h-px flex-1 bg-neutral-800/80"></div>
+                </div>
+
+                {regularServices.length === 0 && (
+                   <p className="text-neutral-500 italic text-center py-4">Nenhum serviço avulso disponível no momento.</p>
                 )}
 
-                {availableServices.map(s => (
+                {regularServices.map(s => (
                   <button 
                     key={s.id} 
                     onClick={() => { setSelectedServiceId(s.id); setStep('professional'); }} 
@@ -489,7 +704,14 @@ export const PublicBooking: React.FC = () => {
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-black uppercase italic text-white group-hover:text-amber-500 transition-colors truncate">{s.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-black uppercase italic text-white group-hover:text-amber-500 transition-colors truncate">{s.name}</h3>
+                        {isMonthlyPackage(s.name) && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[8px] font-black uppercase tracking-wider border border-amber-500/30">
+                            Plano Mensal
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-3 mt-2">
                         <span className="px-3 py-1 rounded-lg bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-wider border border-amber-500/20">
                           R$ {s.price.toFixed(2)}
@@ -630,6 +852,32 @@ export const PublicBooking: React.FC = () => {
                   </div>
                 </div>
 
+                {selectedService && (
+                  <div className="bg-neutral-900/90 border border-neutral-800 p-5 rounded-3xl flex items-center justify-between shadow-xl">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
+                        {isMonthlyPackage(selectedService.name) ? <Sparkles size={20} /> : <Scissors size={20} />}
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">
+                          {isMonthlyPackage(selectedService.name) ? 'Plano Mensal Selecionado' : 'Serviço Selecionado'}
+                        </span>
+                        <p className="text-sm font-black text-white uppercase italic tracking-tight">{selectedService.name}</p>
+                        {isMonthlyPackage(selectedService.name) && (
+                          <p className="text-[10px] text-emerald-400 font-bold mt-0.5">
+                            ✨ Este horário marcará o seu 1º atendimento do pacote mensal!
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-base font-black text-amber-500">
+                        R$ {selectedService.price.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <button 
                   onClick={() => setStep('payment')} 
                   disabled={!clientName || !clientPhone}
@@ -642,6 +890,21 @@ export const PublicBooking: React.FC = () => {
 
             {step === 'payment' && (
               <div className="space-y-6 text-center animate-in zoom-in-95 duration-500">
+                <div className="bg-neutral-900/90 border border-neutral-800 p-5 rounded-3xl text-left flex items-center justify-between shadow-xl">
+                  <div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Total do Agendamento</span>
+                    <p className="text-sm font-black text-white uppercase italic">{selectedService?.name}</p>
+                    {selectedService && isMonthlyPackage(selectedService.name) && (
+                      <p className="text-[10px] text-amber-400 font-bold">Válido por 30 dias corridos</p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-black text-amber-500 italic">
+                      R$ {selectedService ? selectedService.price.toFixed(2) : '0,00'}
+                    </span>
+                  </div>
+                </div>
+
                 <div className="bg-neutral-900 p-10 rounded-[3rem] border border-neutral-800 flex flex-col items-center relative shadow-2xl">
                    <div className="absolute -top-4 px-8 py-2 bg-amber-500 text-black rounded-full shadow-lg shadow-amber-500/20">
                      <span className="text-[11px] font-black uppercase tracking-widest italic">Pagamento Instantâneo</span>

@@ -90,18 +90,93 @@ export const updateSettings = async (updates: Partial<TenantSettings>) => {
   }
 };
 
-export const getServices = async (): Promise<Service[]> => {
-  const { data, error } = await supabase
-    .from('services')
-    .select('*')
-    .eq('tenant_id', TENANT_ID)
-    .order('name');
-  
-  if (error) {
-    console.warn('Warning fetching services:', error.message);
-    return [];
+export const MONTHLY_PACKAGES: Service[] = [
+  {
+    id: 991,
+    tenant_id: TENANT_ID,
+    name: 'Pacote Mensal - 4 Cortes',
+    duration_min: 40,
+    price: 100.00,
+    active: true,
+    image_url: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&q=80&w=600'
+  },
+  {
+    id: 992,
+    tenant_id: TENANT_ID,
+    name: 'Pacote Mensal - 4 Cortes + Barba',
+    duration_min: 55,
+    price: 150.00,
+    active: true,
+    image_url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=600'
   }
-  return data || [];
+];
+
+export const DEFAULT_SERVICES: Service[] = [
+  {
+    id: 1,
+    tenant_id: TENANT_ID,
+    name: 'Corte Degrade',
+    price: 50.00,
+    duration_min: 45,
+    image_url: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&q=80&w=600',
+    active: true
+  },
+  {
+    id: 2,
+    tenant_id: TENANT_ID,
+    name: 'Barba Completa',
+    price: 35.00,
+    duration_min: 30,
+    image_url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=600',
+    active: true
+  },
+  {
+    id: 3,
+    tenant_id: TENANT_ID,
+    name: 'Combo (Corte + Barba)',
+    price: 75.00,
+    duration_min: 60,
+    image_url: 'https://images.unsplash.com/photo-1599351431247-f10b21817021?auto=format&fit=crop&q=80&w=600',
+    active: true
+  },
+  ...MONTHLY_PACKAGES
+];
+
+export const DEFAULT_PROFESSIONALS: Professional[] = [
+  { id: 1, tenant_id: TENANT_ID, name: 'Jardel', specialty: 'Corte Master', active: true },
+  { id: 2, tenant_id: TENANT_ID, name: 'Lucas', specialty: 'Barba e Acabamento', active: true }
+];
+
+export const getServices = async (): Promise<Service[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('services')
+      .select('*')
+      .eq('tenant_id', TENANT_ID)
+      .order('name');
+    
+    if (error || !data || data.length === 0) {
+      console.warn('Warning fetching services, using defaults:', error?.message);
+      return DEFAULT_SERVICES;
+    }
+
+    // Verifica se os pacotes mensais já existem na lista retornada do banco
+    const has4Cortes = data.some(s => s.name.toLowerCase().includes('4 cortes') && !s.name.toLowerCase().includes('barba'));
+    const has4CortesBarba = data.some(s => s.name.toLowerCase().includes('4 cortes') && s.name.toLowerCase().includes('barba'));
+
+    const merged = [...data];
+    if (!has4Cortes) {
+      merged.push(MONTHLY_PACKAGES[0]);
+    }
+    if (!has4CortesBarba) {
+      merged.push(MONTHLY_PACKAGES[1]);
+    }
+
+    return merged;
+  } catch (err) {
+    console.error('Error fetching services:', err);
+    return DEFAULT_SERVICES;
+  }
 };
 
 export const createService = async (service: Partial<Service>) => {
@@ -120,17 +195,22 @@ export const deleteService = async (id: number) => {
 };
 
 export const getProfessionals = async (): Promise<Professional[]> => {
-  const { data, error } = await supabase
-    .from('professionals')
-    .select('*')
-    .eq('tenant_id', TENANT_ID)
-    .order('name');
+  try {
+    const { data, error } = await supabase
+      .from('professionals')
+      .select('*')
+      .eq('tenant_id', TENANT_ID)
+      .order('name');
 
-  if (error) {
-    console.warn('Warning fetching professionals:', error.message);
-    return [];
+    if (error || !data || data.length === 0) {
+      console.warn('Warning fetching professionals (using defaults):', error?.message);
+      return DEFAULT_PROFESSIONALS;
+    }
+    return data;
+  } catch (err) {
+    console.error('Error fetching professionals:', err);
+    return DEFAULT_PROFESSIONALS;
   }
-  return data || [];
 };
 
 export const createProfessional = async (pro: Partial<Professional>) => {
