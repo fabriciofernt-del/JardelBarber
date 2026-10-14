@@ -92,7 +92,7 @@ export const updateSettings = async (updates: Partial<TenantSettings>) => {
 
 export const MONTHLY_PACKAGES: Service[] = [
   {
-    id: 991,
+    id: 8,
     tenant_id: TENANT_ID,
     name: 'Pacote Mensal - 4 Cortes',
     duration_min: 40,
@@ -101,7 +101,7 @@ export const MONTHLY_PACKAGES: Service[] = [
     image_url: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&q=80&w=600'
   },
   {
-    id: 992,
+    id: 9,
     tenant_id: TENANT_ID,
     name: 'Pacote Mensal - 4 Cortes + Barba',
     duration_min: 55,
@@ -242,26 +242,62 @@ export const getAppointments = async (): Promise<Appointment[]> => {
   return data || [];
 };
 
-export const createAppointment = async (appt: Partial<Appointment>) => {
+export const createAppointment = async (appt: Partial<Appointment>): Promise<{ error: any; data?: any }> => {
   try {
-    const response = await fetch('/api/criar-agendamento', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ...appt, tenant_id: TENANT_ID }),
-    });
-    
-    const result = await response.json();
-    
-    if (!response.ok) {
-      console.error('Erro na API:', result);
-      return { error: new Error(result.error || 'Erro ao criar agendamento') };
+    const appointmentToInsert = {
+      ...appt,
+      tenant_id: TENANT_ID,
+    };
+
+    // 1. Salvar diretamente no banco de dados Supabase
+    let { data, error } = await supabase
+      .from('appointments')
+      .insert([appointmentToInsert])
+      .select()
+      .single();
+
+    // Se ocorrer erro de chave estrangeira em service_id (ex: pacote com ID local ainda não sincronizado), tenta salvar com service_id nulo
+    if (error && (error.code === '23503' || error.message?.includes('violates foreign key constraint'))) {
+      console.warn('Foreign key issue on service_id, retrying without service_id constraint:', error.message);
+      const fallbackInsert = { ...appointmentToInsert, service_id: null };
+      const fallbackRes = await supabase
+        .from('appointments')
+        .insert([fallbackInsert])
+        .select()
+        .single();
+      data = fallbackRes.data;
+      error = fallbackRes.error;
     }
-    
-    return { error: null, data: result.data };
+
+    if (error) {
+      console.error('Erro ao salvar agendamento no Supabase:', error);
+      return { error: new Error(error.message || 'Erro ao criar agendamento') };
+    }
+
+    // 2. Se houver endpoint configurado para disparo de emails, notifica de forma segura e não-bloqueante
+    try {
+      fetch('/api/criar-agendamento', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...appointmentToInsert, id: data?.id }),
+      }).then(async res => {
+        // Leitura segura sem lançar exceção de JSON
+        const text = await res.text().catch(() => '');
+        if (text && res.ok) {
+          try { JSON.parse(text); } catch { /* ignore non-json */ }
+        }
+      }).catch(() => {
+        // Ignora silenciosamente se o endpoint não estiver rodando
+      });
+    } catch {
+      // Ignora erro de notificação em background
+    }
+
+    return { error: null, data };
   } catch (err: any) {
-    console.error('Erro ao chamar API:', err);
+    console.error('Erro ao processar agendamento:', err);
     return { error: err };
   }
 };

@@ -173,7 +173,7 @@ export const PublicBooking: React.FC = () => {
 
   const package4Cortes = useMemo(() => {
     return availableServices.find(s => s.name.toLowerCase().includes('4 cortes') && !s.name.toLowerCase().includes('barba')) || {
-      id: 991,
+      id: 8,
       tenant_id: 1,
       name: 'Pacote Mensal - 4 Cortes',
       duration_min: 40,
@@ -185,7 +185,7 @@ export const PublicBooking: React.FC = () => {
 
   const package4CortesBarba = useMemo(() => {
     return availableServices.find(s => s.name.toLowerCase().includes('4 cortes') && s.name.toLowerCase().includes('barba')) || {
-      id: 992,
+      id: 9,
       tenant_id: 1,
       name: 'Pacote Mensal - 4 Cortes + Barba',
       duration_min: 55,
