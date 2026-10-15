@@ -90,93 +90,18 @@ export const updateSettings = async (updates: Partial<TenantSettings>) => {
   }
 };
 
-export const MONTHLY_PACKAGES: Service[] = [
-  {
-    id: 8,
-    tenant_id: TENANT_ID,
-    name: 'Pacote Mensal - 4 Cortes',
-    duration_min: 40,
-    price: 100.00,
-    active: true,
-    image_url: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&q=80&w=600'
-  },
-  {
-    id: 9,
-    tenant_id: TENANT_ID,
-    name: 'Pacote Mensal - 4 Cortes + Barba',
-    duration_min: 55,
-    price: 150.00,
-    active: true,
-    image_url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=600'
-  }
-];
-
-export const DEFAULT_SERVICES: Service[] = [
-  {
-    id: 1,
-    tenant_id: TENANT_ID,
-    name: 'Corte Degrade',
-    price: 50.00,
-    duration_min: 45,
-    image_url: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&q=80&w=600',
-    active: true
-  },
-  {
-    id: 2,
-    tenant_id: TENANT_ID,
-    name: 'Barba Completa',
-    price: 35.00,
-    duration_min: 30,
-    image_url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=600',
-    active: true
-  },
-  {
-    id: 3,
-    tenant_id: TENANT_ID,
-    name: 'Combo (Corte + Barba)',
-    price: 75.00,
-    duration_min: 60,
-    image_url: 'https://images.unsplash.com/photo-1599351431247-f10b21817021?auto=format&fit=crop&q=80&w=600',
-    active: true
-  },
-  ...MONTHLY_PACKAGES
-];
-
-export const DEFAULT_PROFESSIONALS: Professional[] = [
-  { id: 1, tenant_id: TENANT_ID, name: 'Jardel', specialty: 'Corte Master', active: true },
-  { id: 2, tenant_id: TENANT_ID, name: 'Lucas', specialty: 'Barba e Acabamento', active: true }
-];
-
 export const getServices = async (): Promise<Service[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('services')
-      .select('*')
-      .eq('tenant_id', TENANT_ID)
-      .order('name');
-    
-    if (error || !data || data.length === 0) {
-      console.warn('Warning fetching services, using defaults:', error?.message);
-      return DEFAULT_SERVICES;
-    }
-
-    // Verifica se os pacotes mensais já existem na lista retornada do banco
-    const has4Cortes = data.some(s => s.name.toLowerCase().includes('4 cortes') && !s.name.toLowerCase().includes('barba'));
-    const has4CortesBarba = data.some(s => s.name.toLowerCase().includes('4 cortes') && s.name.toLowerCase().includes('barba'));
-
-    const merged = [...data];
-    if (!has4Cortes) {
-      merged.push(MONTHLY_PACKAGES[0]);
-    }
-    if (!has4CortesBarba) {
-      merged.push(MONTHLY_PACKAGES[1]);
-    }
-
-    return merged;
-  } catch (err) {
-    console.error('Error fetching services:', err);
-    return DEFAULT_SERVICES;
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .eq('tenant_id', TENANT_ID)
+    .order('name');
+  
+  if (error) {
+    console.warn('Warning fetching services:', error.message);
+    return [];
   }
+  return data || [];
 };
 
 export const createService = async (service: Partial<Service>) => {
@@ -195,22 +120,17 @@ export const deleteService = async (id: number) => {
 };
 
 export const getProfessionals = async (): Promise<Professional[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('professionals')
-      .select('*')
-      .eq('tenant_id', TENANT_ID)
-      .order('name');
+  const { data, error } = await supabase
+    .from('professionals')
+    .select('*')
+    .eq('tenant_id', TENANT_ID)
+    .order('name');
 
-    if (error || !data || data.length === 0) {
-      console.warn('Warning fetching professionals (using defaults):', error?.message);
-      return DEFAULT_PROFESSIONALS;
-    }
-    return data;
-  } catch (err) {
-    console.error('Error fetching professionals:', err);
-    return DEFAULT_PROFESSIONALS;
+  if (error) {
+    console.warn('Warning fetching professionals:', error.message);
+    return [];
   }
+  return data || [];
 };
 
 export const createProfessional = async (pro: Partial<Professional>) => {
@@ -242,62 +162,26 @@ export const getAppointments = async (): Promise<Appointment[]> => {
   return data || [];
 };
 
-export const createAppointment = async (appt: Partial<Appointment>): Promise<{ error: any; data?: any }> => {
+export const createAppointment = async (appt: Partial<Appointment>) => {
   try {
-    const appointmentToInsert = {
-      ...appt,
-      tenant_id: TENANT_ID,
-    };
-
-    // 1. Salvar diretamente no banco de dados Supabase
-    let { data, error } = await supabase
-      .from('appointments')
-      .insert([appointmentToInsert])
-      .select()
-      .single();
-
-    // Se ocorrer erro de chave estrangeira em service_id (ex: pacote com ID local ainda não sincronizado), tenta salvar com service_id nulo
-    if (error && (error.code === '23503' || error.message?.includes('violates foreign key constraint'))) {
-      console.warn('Foreign key issue on service_id, retrying without service_id constraint:', error.message);
-      const fallbackInsert = { ...appointmentToInsert, service_id: null };
-      const fallbackRes = await supabase
-        .from('appointments')
-        .insert([fallbackInsert])
-        .select()
-        .single();
-      data = fallbackRes.data;
-      error = fallbackRes.error;
+    const response = await fetch('/api/criar-agendamento', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ...appt, tenant_id: TENANT_ID }),
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('Erro na API:', result);
+      return { error: new Error(result.error || 'Erro ao criar agendamento') };
     }
-
-    if (error) {
-      console.error('Erro ao salvar agendamento no Supabase:', error);
-      return { error: new Error(error.message || 'Erro ao criar agendamento') };
-    }
-
-    // 2. Se houver endpoint configurado para disparo de emails, notifica de forma segura e não-bloqueante
-    try {
-      fetch('/api/criar-agendamento', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ...appointmentToInsert, id: data?.id }),
-      }).then(async res => {
-        // Leitura segura sem lançar exceção de JSON
-        const text = await res.text().catch(() => '');
-        if (text && res.ok) {
-          try { JSON.parse(text); } catch { /* ignore non-json */ }
-        }
-      }).catch(() => {
-        // Ignora silenciosamente se o endpoint não estiver rodando
-      });
-    } catch {
-      // Ignora erro de notificação em background
-    }
-
-    return { error: null, data };
+    
+    return { error: null, data: result.data };
   } catch (err: any) {
-    console.error('Erro ao processar agendamento:', err);
+    console.error('Erro ao chamar API:', err);
     return { error: err };
   }
 };
